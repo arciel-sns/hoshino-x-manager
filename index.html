@@ -146,6 +146,96 @@
     .hashtag-toggle input:checked + .toggle-track { background: var(--c-type); }
     .hashtag-toggle input:checked + .toggle-track::after { transform: translateX(16px); }
 
+    /* ── ハッシュタグ管理 ─────────────── */
+    .ht-settings-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--subtle);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ht-settings-btn:hover { border-color: var(--c-type); color: var(--c-type); }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(91,173,255,0.12);
+      border: 1px solid rgba(91,173,255,0.3);
+      color: var(--c-type);
+      border-radius: 20px;
+      padding: 3px 8px 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .tag-chip .chip-del {
+      background: none; border: none; color: inherit;
+      cursor: pointer; font-size: 0.68rem; padding: 0;
+      opacity: 0.6; transition: opacity 0.15s; line-height: 1;
+    }
+    .tag-chip .chip-del:hover { opacity: 1; }
+
+    .tag-chips-row { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+    .ht-section-title {
+      font-size: 0.7rem; font-weight: 600; color: var(--subtle);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    }
+    .tag-input-row { display: flex; gap: 8px; margin-top: 10px; }
+    .tag-input-row input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 10px; color: var(--text); font-size: 0.8rem;
+      font-family: var(--font);
+    }
+    .tag-input-row input:focus { outline: none; border-color: var(--c-type); }
+    .tag-input-row button {
+      background: var(--c-type); border: none; border-radius: 6px;
+      color: #fff; padding: 6px 14px; font-size: 0.8rem;
+      cursor: pointer; font-weight: 600; transition: opacity 0.15s;
+    }
+    .tag-input-row button:hover { opacity: 0.85; }
+
+    .ht-count-note { font-size: 0.72rem; color: var(--subtle); margin-top: 8px; }
+    .ht-count-note.ok   { color: var(--b-type); }
+    .ht-count-note.warn { color: #c07800; }
+
+    /* ── 文字数モード切替 ────────────────── */
+    .char-mode-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .char-mode-selector {
+      display: flex; gap: 3px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .char-mode-btn {
+      background: none; border: none;
+      color: var(--subtle);
+      border-radius: 5px;
+      padding: 3px 10px;
+      font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+      font-family: var(--mono);
+    }
+    .char-mode-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .char-mode-btn:hover:not(.active) { color: var(--text); }
+
+    .free-tags-section {
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .free-tags-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+
     /* ── セレクターUI ─────────────────── */
     .selector-wrap { display: flex; flex-direction: column; gap: 16px; }
 
@@ -1344,11 +1434,14 @@
         <h2>今日の投稿候補</h2>
         <p id="today-schedule-desc"></p>
       </div>
-      <label class="hashtag-toggle" title="ハッシュタグを自動付与">
-        <input type="checkbox" id="hashtag-auto" checked>
-        <span class="toggle-track"></span>
-        #ハッシュタグ自動付与
-      </label>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label class="hashtag-toggle" title="ハッシュタグを自動付与">
+          <input type="checkbox" id="hashtag-auto" checked>
+          <span class="toggle-track"></span>
+          #ハッシュタグ自動付与
+        </label>
+        <button class="ht-settings-btn" onclick="openHtManager()">⚙ タグ設定</button>
+      </div>
     </div>
     <div id="card-container" class="card-list">
       <div class="loading-state">
@@ -1440,7 +1533,7 @@
       </div>
     </div>
     <div class="x-char-note">
-      <span style="font-size:0.72rem;color:var(--subtle)">文字数（X上での制限：280）</span>
+      <span style="font-size:0.72rem;color:var(--subtle)" id="preview-char-label">文字数（推奨：100文字以内）</span>
       <span class="x-char-pill" id="preview-char"></span>
     </div>
   </div>
@@ -1448,13 +1541,102 @@
 
 <div id="toast"></div>
 
+<!-- 固定ハッシュタグ管理モーダル -->
+<div class="modal-overlay" id="ht-manager-modal">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-header">
+      <span>固定ハッシュタグ設定</span>
+      <button class="modal-close" onclick="closeHtManager()">✕</button>
+    </div>
+    <div style="padding:20px 22px 24px">
+      <p style="font-size:0.8rem;color:var(--subtle);line-height:1.75;margin-bottom:18px">
+        投稿時に自動挿入するハッシュタグを登録できます。<br>
+        1投稿あたり3〜4個を推奨しています。
+      </p>
+      <div class="ht-section-title">登録済みの固定タグ</div>
+      <div class="tag-chips-row" id="fixed-tags-list"></div>
+      <div class="tag-input-row">
+        <input type="text" id="fixed-tag-input" placeholder="#ハッシュタグを入力" maxlength="50"
+               onkeydown="if(event.key==='Enter')addFixedHashtag()">
+        <button onclick="addFixedHashtag()">追加</button>
+      </div>
+      <div class="ht-count-note" id="fixed-tag-count-note"></div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /#app-root -->
 
 <script>
 // ══════════════════════════════════════════
 // データ定義
 // ══════════════════════════════════════════
-const HASHTAG = '#事業を勝たせる変革人事';
+const HASHTAG = '#事業を勝たせる変革人事'; // 後方互換用（旧コードが参照する場合に備えて残す）
+
+// ── 固定ハッシュタグ管理（localStorageで永続化）──
+function _loadFixedHashtags() {
+  try {
+    const s = localStorage.getItem('fixedHashtags');
+    return s ? JSON.parse(s) : [HASHTAG];
+  } catch(e) { return [HASHTAG]; }
+}
+function _saveFixedHashtags(tags) {
+  localStorage.setItem('fixedHashtags', JSON.stringify(tags));
+}
+let _fixedHashtags = _loadFixedHashtags();
+
+// 投稿ごとの自由追加タグ（{ postIndex: ['#tag1', ...] }）
+let _postAdditionalTags = {};
+
+// 目標文字数モード（100 / 200 / 300）
+let _charMode = 100;
+
+async function setCharMode(mode, btn) {
+  _charMode = mode;
+  document.querySelectorAll('.char-mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const label = document.getElementById('preview-char-label');
+  if (label) label.textContent = `文字数（推奨：${mode}文字以内）`;
+
+  const ta = document.querySelector('#detail-panel .post-textarea');
+  if (!ta) return;
+
+  const post = _posts[_selectedIndex];
+  if (!post) { ta.dispatchEvent(new Event('input')); return; }
+
+  // ローディング表示
+  const originalText = ta.value;
+  ta.disabled = true;
+  ta.style.opacity = '0.45';
+  ta.value = `AIが約${mode}文字に書き直しています…`;
+  ta.dispatchEvent(new Event('input'));
+
+  const result = await gasPost('rewritePost', {
+    postText:    originalText,
+    targetChars: mode,
+    typeKey:     post.typeKey,
+  });
+
+  ta.disabled = false;
+  ta.style.opacity = '';
+
+  if (result && result.success) {
+    ta.value = result.postText;
+    // AIスコア・コメントも更新
+    const scoreChip = document.querySelector('#detail-panel .ai-score-chip');
+    const aiFill    = document.querySelector('#detail-panel .ai-bar-fill');
+    const aiComment = document.querySelector('#detail-panel .ai-comment-text');
+    if (scoreChip) scoreChip.textContent = 'AI ' + result.aiScore;
+    if (aiFill)    aiFill.style.width = result.aiScore + '%';
+    if (aiComment) aiComment.textContent = result.aiComment;
+    showToast(`約${mode}文字に書き直しました。`, 'ok');
+  } else {
+    ta.value = originalText;
+    showToast('AI再生成に失敗しました。しばらくしてからお試しください。', 'error');
+  }
+
+  ta.dispatchEvent(new Event('input'));
+}
 
 // ══════════════════════════════════════════
 // GAS API 設定（デプロイ後に URL を入力）
@@ -2038,14 +2220,34 @@ function selectPost(index) {
     </div>
     <div class="detail-body">
       <textarea class="post-textarea" rows="7">${post.postText}</textarea>
+      <div class="char-mode-row">
+        <span style="font-size:0.7rem;color:var(--subtle)">目標文字数</span>
+        <div class="char-mode-selector">
+          <button class="char-mode-btn ${_charMode===100?'active':''}" onclick="setCharMode(100,this)">100文字</button>
+          <button class="char-mode-btn ${_charMode===200?'active':''}" onclick="setCharMode(200,this)">200文字</button>
+          <button class="char-mode-btn ${_charMode===300?'active':''}" onclick="setCharMode(300,this)">300文字</button>
+        </div>
+      </div>
       <div class="char-count-row">
         <div class="char-bar-track"><div class="char-bar-fill" style="width:0%"></div></div>
-        <span class="char-count-text">0 / 280</span>
+        <span class="char-count-text">0 / ${_charMode}</span>
       </div>
       <div class="ai-row">
         <span class="ai-score-chip">AI ${post.aiScore}</span>
         <div class="ai-bar-track"><div class="ai-bar-fill" style="width:${post.aiScore}%"></div></div>
         <span class="ai-comment-text">${post.aiComment}</span>
+      </div>
+      <div class="free-tags-section">
+        <div class="free-tags-header">
+          <span class="ht-section-title">この投稿に追加するハッシュタグ</span>
+          <span class="ht-count-note" id="post-tag-count"></span>
+        </div>
+        <div class="tag-chips-row" id="free-tags-list"></div>
+        <div class="tag-input-row" style="margin-top:8px">
+          <input type="text" id="free-tag-input" placeholder="#タグを入力してください（任意）" maxlength="50"
+                 onkeydown="if(event.key==='Enter')addFreeHashtag()">
+          <button onclick="addFreeHashtag()">追加</button>
+        </div>
       </div>
       <div class="status-line"></div>
       <div class="card-actions">
@@ -2068,17 +2270,17 @@ function selectPost(index) {
   const fill = detail.querySelector('.char-bar-fill');
   const txt  = detail.querySelector('.char-count-text');
   const updateCount = () => {
-    const autoOn = document.getElementById('hashtag-auto')?.checked;
-    const base = ta.value;
-    const full = autoOn && !base.includes(HASHTAG) ? base + '\n\n' + HASHTAG : base;
+    const full = getFullText(ta);
     const len = full.length;
-    fill.style.width = Math.min(len / 280 * 100, 100) + '%';
-    fill.style.background = len > 280 ? '#c0392b' : len > 240 ? '#c07800' : 'var(--c-type)';
-    txt.textContent = len + ' / 280';
-    txt.className = 'char-count-text' + (len > 280 ? ' over' : len > 240 ? ' warn' : '');
+    const warn = Math.floor(_charMode * 0.8);
+    fill.style.width = Math.min(len / _charMode * 100, 100) + '%';
+    fill.style.background = len > _charMode ? '#c0392b' : len > warn ? '#c07800' : 'var(--c-type)';
+    txt.textContent = len + ' / ' + _charMode;
+    txt.className = 'char-count-text' + (len > _charMode ? ' over' : len > warn ? ' warn' : '');
   };
   ta.addEventListener('input', updateCount);
   document.getElementById('hashtag-auto')?.addEventListener('change', updateCount);
+  renderFreeTagsBadges();
   updateCount();
 
   // 予約デフォルト日時
@@ -2103,8 +2305,8 @@ async function handlePost(btn) {
   const detail = document.getElementById('detail-panel');
   const ta     = detail.querySelector('.post-textarea');
   const len    = getFullText(ta).length;
-  if (len > 280) { showToast('280文字を超えています', 'error'); return; }
-  if (!confirm(`投稿しますか？\n\n「${ta.value.slice(0, 40)}…」`)) return;
+  if (len > _charMode && !confirm(`目標の${_charMode}文字を超えていますが、このまま投稿しますか？\n\n「${ta.value.slice(0, 40)}…」`)) return;
+  if (len <= _charMode && !confirm(`投稿しますか？\n\n「${ta.value.slice(0, 40)}…」`)) return;
   btn.textContent = '送信中…'; btn.disabled = true;
 
   const post   = _posts[_selectedIndex];
@@ -2171,8 +2373,8 @@ function openPreview(btn) {
     now.toLocaleString('ja-JP',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
 
   const pill = document.getElementById('preview-char');
-  pill.textContent = len + ' / 280';
-  pill.className = 'x-char-pill' + (len > 280 ? ' over' : len > 240 ? ' warn' : '');
+  pill.textContent = len + ' / ' + _charMode;
+  pill.className = 'x-char-pill' + (len > _charMode ? ' over' : len > Math.floor(_charMode * 0.8) ? ' warn' : '');
 
   document.getElementById('preview-modal').classList.add('open');
 }
@@ -2185,8 +2387,128 @@ document.getElementById('preview-modal').addEventListener('click', e => {
 
 function getFullText(ta) {
   const auto = document.getElementById('hashtag-auto')?.checked;
+  if (!auto) return ta.value;
   const base = ta.value;
-  return auto && !base.includes(HASHTAG) ? base + '\n\n' + HASHTAG : base;
+  const fixedTags = _fixedHashtags.filter(t => !base.includes(t));
+  const freeTags  = (_postAdditionalTags[_selectedIndex] || []).filter(t => !base.includes(t));
+  const allTags   = [...fixedTags, ...freeTags];
+  return allTags.length > 0 ? base + '\n\n' + allTags.join(' ') : base;
+}
+
+// ── 固定ハッシュタグ管理モーダル ──────────
+function openHtManager() {
+  renderFixedTagsList();
+  updateFixedTagCountNote();
+  document.getElementById('ht-manager-modal').classList.add('open');
+}
+function closeHtManager() {
+  document.getElementById('ht-manager-modal').classList.remove('open');
+  document.getElementById('fixed-tag-input').value = '';
+}
+document.getElementById('ht-manager-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeHtManager();
+});
+
+function renderFixedTagsList() {
+  const container = document.getElementById('fixed-tags-list');
+  if (!container) return;
+  if (_fixedHashtags.length === 0) {
+    container.innerHTML = '<span style="font-size:0.75rem;color:var(--subtle)">固定タグはまだ登録されていません。</span>';
+    return;
+  }
+  container.innerHTML = _fixedHashtags.map((tag, i) => `
+    <span class="tag-chip">${tag}
+      <button class="chip-del" onclick="removeFixedHashtag(${i})" title="削除">✕</button>
+    </span>
+  `).join('');
+}
+
+function addFixedHashtag() {
+  const input = document.getElementById('fixed-tag-input');
+  let tag = input.value.trim();
+  if (!tag) { showToast('タグを入力してください', 'error'); return; }
+  if (!tag.startsWith('#')) tag = '#' + tag;
+  if (_fixedHashtags.includes(tag)) { showToast('すでに登録されているタグです', 'error'); return; }
+  if (_fixedHashtags.length >= 4) { showToast('固定タグは最大4個まで設定できます', 'error'); return; }
+  _fixedHashtags.push(tag);
+  _saveFixedHashtags(_fixedHashtags);
+  input.value = '';
+  renderFixedTagsList();
+  updateFixedTagCountNote();
+  const ta = document.querySelector('#detail-panel .post-textarea');
+  if (ta) ta.dispatchEvent(new Event('input'));
+}
+
+function removeFixedHashtag(index) {
+  _fixedHashtags.splice(index, 1);
+  _saveFixedHashtags(_fixedHashtags);
+  renderFixedTagsList();
+  updateFixedTagCountNote();
+  const ta = document.querySelector('#detail-panel .post-textarea');
+  if (ta) ta.dispatchEvent(new Event('input'));
+}
+
+function updateFixedTagCountNote() {
+  const note = document.getElementById('fixed-tag-count-note');
+  if (!note) return;
+  const count = _fixedHashtags.length;
+  if (count >= 4) {
+    note.textContent = `固定タグ：${count}個（上限の4個に達しています。）`;
+    note.className = 'ht-count-note warn';
+  } else if (count >= 3) {
+    note.textContent = `固定タグ：${count}個（推奨範囲内です。）`;
+    note.className = 'ht-count-note ok';
+  } else {
+    note.textContent = `固定タグ：${count}個 ／ 1投稿あたり3〜4個を推奨しています。`;
+    note.className = 'ht-count-note';
+  }
+}
+
+// ── 投稿ごとの自由追加タグ ──────────────
+function renderFreeTagsBadges() {
+  const container = document.getElementById('free-tags-list');
+  if (!container) return;
+  const tags = _postAdditionalTags[_selectedIndex] || [];
+  container.innerHTML = tags.length === 0
+    ? '<span style="font-size:0.72rem;color:var(--subtle)">追加タグはまだありません。</span>'
+    : tags.map((tag, i) => `
+        <span class="tag-chip">${tag}
+          <button class="chip-del" onclick="removeFreeHashtag(${i})" title="削除">✕</button>
+        </span>`).join('');
+  updatePostTagCount();
+}
+
+function addFreeHashtag() {
+  const input = document.getElementById('free-tag-input');
+  let tag = input.value.trim();
+  if (!tag) { showToast('タグを入力してください', 'error'); return; }
+  if (!tag.startsWith('#')) tag = '#' + tag;
+  const existing = [..._fixedHashtags, ...(_postAdditionalTags[_selectedIndex] || [])];
+  if (existing.includes(tag)) { showToast('すでに追加されているタグです', 'error'); return; }
+  if (existing.length >= 4) { showToast('1投稿あたり4個以内を推奨しています', 'error'); return; }
+  if (!_postAdditionalTags[_selectedIndex]) _postAdditionalTags[_selectedIndex] = [];
+  _postAdditionalTags[_selectedIndex].push(tag);
+  input.value = '';
+  renderFreeTagsBadges();
+  const ta = document.querySelector('#detail-panel .post-textarea');
+  if (ta) ta.dispatchEvent(new Event('input'));
+}
+
+function removeFreeHashtag(index) {
+  if (!_postAdditionalTags[_selectedIndex]) return;
+  _postAdditionalTags[_selectedIndex].splice(index, 1);
+  renderFreeTagsBadges();
+  const ta = document.querySelector('#detail-panel .post-textarea');
+  if (ta) ta.dispatchEvent(new Event('input'));
+}
+
+function updatePostTagCount() {
+  const note = document.getElementById('post-tag-count');
+  if (!note) return;
+  const freeCount = (_postAdditionalTags[_selectedIndex] || []).length;
+  const total = _fixedHashtags.length + freeCount;
+  note.textContent = `合計 ${total}個（推奨：3〜4個です。）`;
+  note.className = 'ht-count-note' + (total >= 3 && total <= 4 ? ' ok' : total > 4 ? ' warn' : '');
 }
 
 // ══════════════════════════════════════════
