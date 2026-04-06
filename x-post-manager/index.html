@@ -1,0 +1,2603 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hoshino X</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #0c0f1a;
+      --bg2:       #111525;
+      --surface:   #161b2c;
+      --surface2:  #1e2440;
+      --border:    #252e4e;
+      --muted:     #3a4468;
+      --subtle:    #606b90;
+      --text:      #dde4f2;
+      --text-sub:  #8896b8;
+      --radius:    14px;
+      --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono:      'SF Mono', 'Fira Code', monospace;
+      /* Hoshino yellow × X blue */
+      --yellow:    #f5c518;
+      --yellow-dim: rgba(245,197,24,0.14);
+      --x-blue:    #1d9bf0;
+      /* タイプカラー（ダーク） */
+      --c-type:    #5badff;
+      --c-bg:      rgba(91,173,255,0.1);
+      --b-type:    #4ade80;
+      --b-bg:      rgba(74,222,128,0.1);
+      --a-type:    #f5c518;
+      --a-bg:      rgba(245,197,24,0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(29,155,240,0.06) 0%, transparent 55%),
+        radial-gradient(ellipse at 90% 80%, rgba(245,197,24,0.04) 0%, transparent 50%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── ヘッダー ───────────────────── */
+    .app-header {
+      background: rgba(17,21,37,0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .app-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--subtle);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+      letter-spacing: 0.02em;
+    }
+    .tab-btn:hover { background: var(--bg); color: var(--text); }
+    .tab-btn.active { background: var(--bg); color: var(--text); font-weight: 700; }
+    .header-date {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--subtle);
+    }
+    .preview-badge {
+      font-size: 0.65rem;
+      background: var(--yellow-dim);
+      color: var(--yellow);
+      border: 1px solid rgba(245,197,24,0.28);
+      border-radius: 4px;
+      padding: 2px 8px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── メインエリア ────────────────── */
+    .main { max-width: 860px; margin: 0 auto; padding: 28px 20px 80px; }
+
+    /* ── タブパネル ─────────────────── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ═══════════════════════════════════
+       今日タブ
+    ═══════════════════════════════════ */
+    .today-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .today-header h2 { font-size: 0.88rem; font-weight: 700; }
+    .today-header p  { font-size: 0.75rem; color: var(--subtle); margin-top: 2px; }
+    .hashtag-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      cursor: pointer;
+      user-select: none;
+    }
+    .hashtag-toggle input { display: none; }
+    .toggle-track {
+      width: 36px; height: 20px;
+      background: var(--muted);
+      border-radius: 10px;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 14px; height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .hashtag-toggle input:checked + .toggle-track { background: var(--c-type); }
+    .hashtag-toggle input:checked + .toggle-track::after { transform: translateX(16px); }
+
+    /* ── ハッシュタグ管理 ─────────────── */
+    .ht-settings-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--subtle);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ht-settings-btn:hover { border-color: var(--c-type); color: var(--c-type); }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(91,173,255,0.12);
+      border: 1px solid rgba(91,173,255,0.3);
+      color: var(--c-type);
+      border-radius: 20px;
+      padding: 3px 8px 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .tag-chip .chip-del {
+      background: none; border: none; color: inherit;
+      cursor: pointer; font-size: 0.68rem; padding: 0;
+      opacity: 0.6; transition: opacity 0.15s; line-height: 1;
+    }
+    .tag-chip .chip-del:hover { opacity: 1; }
+
+    .tag-chips-row { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+    .ht-section-title {
+      font-size: 0.7rem; font-weight: 600; color: var(--subtle);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    }
+    .tag-input-row { display: flex; gap: 8px; margin-top: 10px; }
+    .tag-input-row input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 10px; color: var(--text); font-size: 0.8rem;
+      font-family: var(--font);
+    }
+    .tag-input-row input:focus { outline: none; border-color: var(--c-type); }
+    .tag-input-row button {
+      background: var(--c-type); border: none; border-radius: 6px;
+      color: #fff; padding: 6px 14px; font-size: 0.8rem;
+      cursor: pointer; font-weight: 600; transition: opacity 0.15s;
+    }
+    .tag-input-row button:hover { opacity: 0.85; }
+
+    .ht-count-note { font-size: 0.72rem; color: var(--subtle); margin-top: 8px; }
+    .ht-count-note.ok   { color: var(--b-type); }
+    .ht-count-note.warn { color: #c07800; }
+
+    .free-tags-section {
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .free-tags-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+
+    /* ── セレクターUI ─────────────────── */
+    .selector-wrap { display: flex; flex-direction: column; gap: 16px; }
+
+    .selector-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      perspective: 1400px;
+    }
+
+    .selector-tile {
+      /* タイプ別グロー変数 */
+      --glow:     rgba(255,255,255,0.15);
+      --glow-dim: rgba(255,255,255,0.08);
+      background: linear-gradient(160deg, var(--surface) 0%, var(--bg2) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 18px 18px;
+      cursor: pointer;
+      /* transitionは JS が上書きするので最低限 */
+      transition: border-color 0.3s, box-shadow 0.3s, opacity 0.3s, filter 0.3s;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+      transform-style: preserve-3d;
+      will-change: transform;
+      box-shadow:
+        0 2px 12px rgba(0,0,0,0.45),
+        0 1px 3px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    /* タイプ別グロー変数 */
+    .selector-tile[data-type="C"] { --glow: rgba(91,173,255,0.55); --glow-dim: rgba(91,173,255,0.22); }
+    .selector-tile[data-type="B"] { --glow: rgba(74,222,128,0.55); --glow-dim: rgba(74,222,128,0.22); }
+    .selector-tile[data-type="A"] { --glow: rgba(245,197,24,0.55);  --glow-dim: rgba(245,197,24,0.22); }
+
+    /* マウス追従シャイン（::before） */
+    .selector-tile::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle at var(--mx, 50%) var(--my, 50%),
+        rgba(255,255,255,0.09) 0%,
+        transparent 55%
+      );
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .selector-tile:not(.inactive):hover::before { opacity: 1; }
+
+    /* タイプカラー背景グロー（::after） */
+    .selector-tile::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .selector-tile[data-type="C"]::after { background: radial-gradient(ellipse at 20% 15%, rgba(91,173,255,0.14), transparent 62%); }
+    .selector-tile[data-type="B"]::after { background: radial-gradient(ellipse at 20% 15%, rgba(74,222,128,0.13), transparent 62%); }
+    .selector-tile[data-type="A"]::after { background: radial-gradient(ellipse at 20% 15%, rgba(245,197,24,0.13), transparent 62%); }
+    .selector-tile.selected::after { opacity: 1; }
+
+    /* 選択 → タイプカラーグロー */
+    .selector-tile.selected[data-type="C"] { border-color: var(--c-type); box-shadow: 0 0 0 1px var(--c-type), 0 0 32px var(--glow-dim), 0 12px 44px rgba(0,0,0,0.55); }
+    .selector-tile.selected[data-type="B"] { border-color: var(--b-type); box-shadow: 0 0 0 1px var(--b-type), 0 0 32px var(--glow-dim), 0 12px 44px rgba(0,0,0,0.55); }
+    .selector-tile.selected[data-type="A"] { border-color: var(--a-type); box-shadow: 0 0 0 1px var(--a-type), 0 0 32px var(--glow-dim), 0 12px 44px rgba(0,0,0,0.55); }
+
+    /* 選択瞬間：X青フラッシュ → タイプカラーへ */
+    @keyframes blueSelectFlash {
+      0%   { box-shadow: 0 0 0 0   rgba(29,155,240,0),   0 2px 12px rgba(0,0,0,0.45); }
+      25%  { box-shadow: 0 0 0 4px rgba(29,155,240,0.7), 0 0 60px rgba(29,155,240,0.45), 0 14px 50px rgba(0,0,0,0.6); }
+      60%  { box-shadow: 0 0 0 2px rgba(29,155,240,0.3), 0 0 40px rgba(29,155,240,0.2), 0 12px 44px rgba(0,0,0,0.55); }
+      100% { box-shadow: 0 0 0 1px var(--border-end, var(--c-type)), 0 0 32px var(--glow-dim), 0 12px 44px rgba(0,0,0,0.55); }
+    }
+    .selector-tile.flash-select {
+      animation: blueSelectFlash 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .selector-tile.inactive { opacity: 0.26; filter: grayscale(0.65); }
+
+    .tile-num {
+      font-family: var(--mono);
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 12px;
+      color: var(--muted);
+      transition: color 0.22s;
+      position: relative; z-index: 1;
+    }
+    .selector-tile.selected[data-type="C"] .tile-num { color: var(--c-type); }
+    .selector-tile.selected[data-type="B"] .tile-num { color: var(--b-type); }
+    .selector-tile.selected[data-type="A"] .tile-num { color: var(--a-type); }
+
+    .tile-badge-row { margin-bottom: 10px; position: relative; z-index: 1; }
+    .tile-preview {
+      font-size: 0.76rem;
+      line-height: 1.62;
+      color: var(--text-sub);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 14px;
+      position: relative; z-index: 1;
+    }
+    .tile-score {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      position: relative; z-index: 1;
+    }
+    .tile-score-bar { flex: 1; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
+    .tile-score-fill { height: 100%; background: #9b72e8; border-radius: 1px; }
+    .tile-dot {
+      position: absolute;
+      top: 14px; right: 14px;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.22s;
+      z-index: 1;
+    }
+    .selector-tile.selected .tile-dot { opacity: 1; }
+    .selector-tile.selected[data-type="C"] .tile-dot { background: var(--c-type); }
+    .selector-tile.selected[data-type="B"] .tile-dot { background: var(--b-type); }
+    .selector-tile.selected[data-type="A"] .tile-dot { background: var(--a-type); }
+
+    /* ── 詳細パネル ─────────────────── */
+    .detail-panel {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--bg2) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 0.32s cubic-bezier(0.16,1,0.3,1), opacity 0.28s ease;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .detail-panel.visible { transform: translateY(0); opacity: 1; }
+    .detail-panel[data-type="C"] { border-top: 2px solid var(--c-type); }
+    .detail-panel[data-type="B"] { border-top: 2px solid var(--b-type); }
+    .detail-panel[data-type="A"] { border-top: 2px solid var(--a-type); }
+    .detail-panel.done { opacity: 0.4; pointer-events: none; }
+
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 13px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-panel[data-type="C"] .detail-header { background: linear-gradient(90deg, rgba(91,173,255,0.07), transparent 70%); }
+    .detail-panel[data-type="B"] .detail-header { background: linear-gradient(90deg, rgba(74,222,128,0.07), transparent 70%); }
+    .detail-panel[data-type="A"] .detail-header { background: linear-gradient(90deg, rgba(245,197,24,0.07), transparent 70%); }
+    .detail-mission {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .detail-cat { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+    .detail-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+    .type-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 3px 10px;
+      border-radius: 4px;
+    }
+    .type-badge.C { background: var(--c-bg); color: var(--c-type); }
+    .type-badge.B { background: var(--b-bg); color: var(--b-type); }
+    .type-badge.A { background: var(--a-bg); color: var(--a-type); }
+    .card-num { margin-left: auto; font-family: var(--mono); font-size: 0.65rem; color: var(--muted); }
+
+    /* テキストエリア */
+    .post-textarea {
+      width: 100%;
+      font-family: var(--font);
+      font-size: 0.9rem;
+      line-height: 1.75;
+      color: var(--text);
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 8px 10px;
+      resize: vertical;
+      min-height: 100px;
+      background: transparent;
+      transition: border-color 0.15s, background 0.15s;
+      outline: none;
+    }
+    .post-textarea:focus {
+      border-color: var(--border);
+      background: var(--bg);
+    }
+
+    /* 文字数カウンター */
+    .char-count-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .char-bar-track {
+      width: 80px; height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .char-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.1s, background 0.2s;
+      background: var(--c-type);
+    }
+    .char-count-text {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--subtle);
+      min-width: 48px;
+      text-align: right;
+    }
+    .char-count-text.warn  { color: #fbbf24; }
+    .char-count-text.over  { color: #f87171; }
+
+    /* AI欄 */
+    .ai-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(124,58,237,0.1);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: #a78bfa;
+    }
+    .ai-score-chip {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .ai-bar-track {
+      width: 48px; height: 3px;
+      background: rgba(124,58,237,0.18);
+      border-radius: 2px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .ai-bar-fill { height: 100%; background: #8b5cf6; border-radius: 2px; }
+    .ai-comment-text { color: #c4b5fd; line-height: 1.5; }
+
+    /* アクションボタン */
+    .card-actions { display: flex; align-items: center; gap: 8px; }
+    button { border: none; border-radius: 6px; font-family: var(--font); cursor: pointer; transition: all 0.15s; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-preview  { background: var(--surface2); color: var(--text-sub); border: 1px solid var(--border); font-size: 0.75rem; padding: 7px 14px; }
+    .btn-preview:hover:not(:disabled) { border-color: var(--muted); color: var(--text); background: rgba(255,255,255,0.05); }
+    .btn-post     { background: var(--yellow); color: #0c0f1a; font-size: 0.75rem; font-weight: 700; padding: 7px 20px; letter-spacing: 0.02em; }
+    .btn-post:hover:not(:disabled) { background: #d4a815; box-shadow: 0 0 16px rgba(245,197,24,0.3); }
+    .btn-reserve  { background: transparent; color: var(--subtle); border: 1px solid var(--border); font-size: 0.75rem; padding: 7px 14px; }
+    .btn-reserve:hover:not(:disabled) { border-color: var(--muted); color: var(--text); }
+    .btn-ghost    { background: transparent; color: var(--subtle); font-size: 0.72rem; padding: 7px 10px; }
+    .btn-ghost:hover:not(:disabled) { color: var(--text); }
+    .btn-confirm  { background: #22c55e; color: #0c0f1a; font-size: 0.75rem; font-weight: 700; padding: 7px 18px; }
+    .btn-confirm:hover:not(:disabled) { background: #16a34a; }
+
+    /* 予約フォーム */
+    .reserve-form { display: none; flex-direction: column; gap: 8px; padding-top: 4px; }
+    .reserve-form.visible { display: flex; }
+    .reserve-form label { font-size: 0.72rem; color: var(--subtle); }
+    .reserve-form input[type="datetime-local"] {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-family: var(--mono); font-size: 0.78rem;
+      padding: 8px 12px; width: 100%; outline: none; transition: border-color 0.15s;
+    }
+    .reserve-form input:focus { border-color: var(--muted); }
+    .reserve-form input::-webkit-calendar-picker-indicator { opacity: 0.4; cursor: pointer; }
+    .reserve-form-btns { display: flex; gap: 8px; }
+
+    /* ステータス表示 */
+    .status-line {
+      display: none; font-size: 0.73rem; font-family: var(--mono);
+      letter-spacing: 0.04em; padding: 6px 0;
+    }
+    .status-line.posted   { display: block; color: var(--c-type); }
+    .status-line.reserved { display: block; color: var(--b-type); }
+
+    /* ═══════════════════════════════════
+       投稿カレンダータブ
+    ═══════════════════════════════════ */
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      gap: 12px;
+    }
+    .cal-nav-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .cal-year-month {
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+    .cal-legend { display: flex; gap: 12px; }
+    .cal-legend-item { display: flex; align-items: center; gap: 4px; font-size: 0.68rem; color: var(--subtle); }
+    .cal-legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .cal-nav-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .cal-nav-btn:hover { background: var(--surface2); border-color: var(--muted); color: var(--text); }
+
+    .cal-weekday-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .cal-weekday {
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--subtle);
+      padding: 4px 0;
+    }
+    .cal-weekday.sat { color: var(--c-type); }
+    .cal-weekday.sun { color: #f87171; }
+
+    .cal-month-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-cell {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 7px 7px 6px;
+      min-height: 84px;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+    .cal-cell:not(.empty):hover { border-color: var(--muted); }
+
+    /* ── 今日 ── */
+    .cal-cell.today {
+      background: rgba(29,155,240,0.09);
+      border-color: var(--x-blue);
+      box-shadow: 0 0 0 1px var(--x-blue), 0 0 18px rgba(29,155,240,0.2);
+    }
+    .cal-today-label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.46rem;
+      letter-spacing: 0.14em;
+      color: var(--x-blue);
+      margin-bottom: 2px;
+      line-height: 1;
+    }
+    .cal-cell.today .cal-cell-num {
+      color: var(--x-blue);
+      font-size: 1.05rem;
+    }
+
+    /* ── 祝日 ── */
+    .cal-cell.holiday {
+      background: rgba(248,113,113,0.06);
+      border-color: rgba(248,113,113,0.25);
+    }
+    .cal-cell.holiday:not(.empty):hover { border-color: rgba(248,113,113,0.5); }
+    .cal-holiday-name {
+      font-size: 0.52rem;
+      color: #f87171;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cal-cell.holiday .cal-cell-num { color: #f87171; }
+    .cal-cell.today.holiday {
+      background: rgba(29,155,240,0.09);
+      border-color: var(--x-blue);
+      box-shadow: 0 0 0 1px var(--x-blue), 0 0 18px rgba(29,155,240,0.2);
+    }
+    .cal-cell.today.holiday .cal-cell-num { color: var(--x-blue); }
+    .cal-cell.today.holiday .cal-holiday-name { color: rgba(248,113,113,0.85); }
+
+    .cal-cell.empty {
+      background: transparent;
+      border-color: transparent;
+      pointer-events: none;
+    }
+    .cal-cell.weekend { background: rgba(255,255,255,0.012); }
+    .cal-cell.weekend .cal-cell-num { color: var(--muted); }
+    .cal-cell-num {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--subtle);
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+    .cal-post-tags { display: flex; flex-direction: column; gap: 3px; }
+    .cal-post-tag {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.58rem;
+      line-height: 1.3;
+    }
+    .cal-tag-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .cal-tag-dot.A { background: var(--a-type); }
+    .cal-tag-dot.B { background: var(--b-type); }
+    .cal-tag-dot.C { background: var(--c-type); }
+    .cal-tag-label { color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 68px; }
+
+    /* ═══════════════════════════════════
+       メモタブ
+    ═══════════════════════════════════ */
+    .memo-input-area {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .memo-textarea {
+      width: 100%;
+      min-height: 100px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.88rem;
+      line-height: 1.7;
+      padding: 14px 16px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .memo-textarea:focus { border-color: var(--x-blue); }
+    .memo-save-btn {
+      align-self: flex-end;
+      background: var(--x-blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 22px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .memo-save-btn:hover { opacity: 0.85; }
+    .memo-section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--subtle);
+      margin-bottom: 10px;
+    }
+    .memo-list { display: flex; flex-direction: column; gap: 10px; }
+    .memo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      position: relative;
+    }
+    .memo-card-text {
+      font-size: 0.86rem;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+      margin-bottom: 8px;
+    }
+    .memo-tag-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .memo-date {
+      font-size: 0.68rem;
+      color: var(--subtle);
+      font-family: var(--mono);
+    }
+    .memo-ai-badge {
+      font-size: 0.62rem;
+      background: rgba(29,155,240,0.12);
+      color: var(--x-blue);
+      border: 1px solid rgba(29,155,240,0.25);
+      border-radius: 4px;
+      padding: 2px 7px;
+      letter-spacing: 0.04em;
+    }
+    .memo-delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .memo-delete-btn:hover { color: #f87171; background: rgba(248,113,113,0.1); }
+    .memo-empty {
+      text-align: center;
+      color: var(--subtle);
+      font-size: 0.8rem;
+      padding: 32px 0;
+    }
+
+    /* ═══════════════════════════════════
+       イベントタブ
+    ═══════════════════════════════════ */
+    .events-tab-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .events-tab-header h2 { font-size: 0.88rem; font-weight: 700; }
+    .events-tab-header p  { font-size: 0.75rem; color: var(--subtle); margin-top: 2px; }
+    .events-month-select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.8rem;
+      padding: 6px 12px;
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+    }
+    .events-month-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .events-month-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--subtle);
+      margin-bottom: 12px;
+    }
+    .event-list { display: flex; flex-direction: column; gap: 8px; }
+    .event-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--bg2);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .event-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      width: 28px;
+      text-align: center;
+    }
+    .event-content { flex: 1; min-width: 0; }
+    .event-title {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .event-desc {
+      font-size: 0.74rem;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+    .event-tag {
+      font-size: 0.62rem;
+      border-radius: 4px;
+      padding: 2px 7px;
+      flex-shrink: 0;
+      font-weight: 700;
+      align-self: flex-start;
+      margin-top: 2px;
+    }
+    .event-tag.biz  { background: rgba(245,197,24,0.12); color: var(--yellow); border: 1px solid rgba(245,197,24,0.25); }
+    .event-tag.sns  { background: rgba(29,155,240,0.12);  color: var(--x-blue);  border: 1px solid rgba(29,155,240,0.25); }
+    .event-tag.life { background: rgba(74,222,128,0.12); color: var(--b-type);  border: 1px solid rgba(74,222,128,0.25); }
+    /* カレンダーセル内のイベントドット */
+    .cal-event-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--yellow);
+      flex-shrink: 0;
+      opacity: 0.8;
+    }
+
+    /* ═══════════════════════════════════
+       Xプレビューモーダル
+    ═══════════════════════════════════ */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none; align-items: center; justify-content: center;
+      z-index: 200; padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%; max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem; font-weight: 700;
+    }
+    .modal-close { background: none; border: none; font-size: 1.1rem; color: var(--subtle); cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+    .modal-close:hover { background: var(--bg); }
+    .x-card { padding: 18px 20px; }
+    .x-user-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .x-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: linear-gradient(135deg, #1d9bf0, #1a6fb5);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 1rem; flex-shrink: 0;
+    }
+    .x-name { font-weight: 700; font-size: 0.88rem; }
+    .x-handle { font-size: 0.78rem; color: var(--subtle); }
+    .x-text { font-size: 0.92rem; line-height: 1.75; color: var(--text); white-space: pre-wrap; margin-bottom: 14px; }
+    .x-text .x-hashtag { color: #1d9bf0; }
+    .x-meta { font-size: 0.75rem; color: var(--subtle); padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+    .x-actions {
+      display: flex; justify-content: space-around;
+      padding-top: 12px;
+    }
+    .x-action-btn { background: none; border: none; color: var(--subtle); font-size: 0.75rem; display: flex; align-items: center; gap: 4px; cursor: default; padding: 4px 8px; }
+    .x-char-note {
+      padding: 10px 18px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.72rem;
+    }
+    .x-char-pill {
+      font-family: var(--mono);
+      padding: 3px 10px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+    .x-char-pill.warn { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); color: #fbbf24; }
+    .x-char-pill.over { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); color: #f87171; }
+
+    /* トースト */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 22px; border-radius: 100px;
+      font-size: 0.78rem; letter-spacing: 0.03em;
+      transition: transform 0.25s ease, opacity 0.25s;
+      opacity: 0; z-index: 300; white-space: nowrap;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    #toast.show  { transform: translateX(-50%) translateY(0); opacity: 1; }
+    #toast.ok    { background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.4); color: #4ade80; }
+    #toast.error { background: rgba(248,113,113,0.18); border-color: rgba(248,113,113,0.4); color: #f87171; }
+
+    @keyframes pulse { 0%,100%{opacity:0.2} 50%{opacity:0.5} }
+    .loading-dot { display: inline-block; width: 4px; height: 4px; background: var(--muted); border-radius: 50%; animation: pulse 1.2s ease infinite; margin: 0 2px; }
+    .loading-dot:nth-child(2){animation-delay:0.2s} .loading-dot:nth-child(3){animation-delay:0.4s}
+    .loading-state { text-align: center; padding: 60px 0; color: var(--muted); font-size: 0.8rem; }
+
+    /* 投稿なし空状態 */
+    .no-post-today {
+      text-align: center;
+      padding: 64px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+    .no-post-icon  { font-size: 2.4rem; margin-bottom: 14px; }
+    .no-post-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .no-post-sub   { font-size: 0.75rem; color: var(--subtle); font-family: var(--mono); }
+
+    /* ══════════════════════════════════════
+       イントロオーバーレイ
+    ══════════════════════════════════════ */
+    #intro {
+      position: fixed;
+      inset: 0;
+      background: #080808;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* ステージ：変革人事 と HOSHINO を重ねるコンテナ */
+    .intro-stage {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    /* ── HOSHINO（上から落ちてくる） ── */
+    .intro-hoshino {
+      font-family: 'Bebas Neue', var(--mono), sans-serif;
+      font-size: clamp(3rem, 9vw, 5.5rem);
+      font-weight: 400;
+      letter-spacing: 0.18em;
+      color: #fff;
+      opacity: 0;
+      transform: translateY(-320px);
+      position: relative;
+      z-index: 2;
+      text-shadow:
+        0 0 20px rgba(255,255,255,0.4),
+        0 0 60px rgba(255,255,255,0.15);
+    }
+    .intro-hoshino.fall {
+      animation: hoshinoFall 0.52s cubic-bezier(0.6, 0, 1, 0.5) forwards;
+    }
+    @keyframes hoshinoFall {
+      0%   { opacity: 1; transform: translateY(-320px); filter: blur(2px); }
+      80%  { filter: blur(0px); }
+      100% { opacity: 1; transform: translateY(0px); }
+    }
+
+    /* ── 変革人事（1文字ずつ浮かび上がる） ── */
+    .intro-kanji-row {
+      display: flex;
+      gap: 0.06em;
+      position: relative;
+      z-index: 1;
+    }
+    .kanji-char {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', sans-serif;
+      font-size: clamp(3rem, 9vw, 5.5rem);
+      font-weight: 900;
+      color: #fff;
+      opacity: 0;
+      transform: translateY(50px);
+      display: inline-block;
+      letter-spacing: 0.04em;
+    }
+    .kanji-char.rise {
+      animation: charRise 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes charRise {
+      0%  { opacity: 0; transform: translateY(50px); text-shadow: none; }
+      60% { text-shadow: 0 0 30px rgba(255,255,255,0.8); }
+      100%{ opacity: 1; transform: translateY(0);
+            text-shadow: 0 0 12px rgba(255,255,255,0.3); }
+    }
+
+    /* ── スピードライン（落下中に出現） ── */
+    .speed-line {
+      position: absolute;
+      left: 50%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.5), transparent);
+      transform-origin: center;
+      animation: speedLineFade 0.4s ease forwards;
+      pointer-events: none;
+    }
+    @keyframes speedLineFade {
+      0%   { opacity: 0; width: 0; }
+      30%  { opacity: 0.7; }
+      100% { opacity: 0; width: var(--w, 200px); }
+    }
+
+    /* ── 衝突フラッシュ ── */
+    .intro-flash {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, #fff 0%, rgba(255,200,100,0.4) 50%, transparent 80%);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10000;
+    }
+    .intro-flash.bang {
+      animation: flashBang 0.4s ease forwards;
+    }
+    @keyframes flashBang {
+      0%   { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ── 衝撃波リング ── */
+    .shockwave {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.9);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      animation: shockwaveExpand var(--dur, 0.6s) ease-out var(--delay, 0s) forwards;
+    }
+    @keyframes shockwaveExpand {
+      0%   { width: 10px; height: 10px; opacity: 0.9; }
+      100% { width: var(--size, 400px); height: var(--size, 400px); opacity: 0; }
+    }
+
+    /* ── 火花パーティクル ── */
+    .spark {
+      position: absolute;
+      top: 50%; left: 50%;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: sparkFly var(--dur, 0.7s) ease-out var(--delay, 0s) forwards;
+    }
+    @keyframes sparkFly {
+      0%   { transform: translate(-50%,-50%) translate(0,0) scale(1); opacity: 1; }
+      100% { transform: translate(-50%,-50%) translate(var(--sx),var(--sy)) scale(0); opacity: 0; }
+    }
+
+    /* ── 残光グロー（衝突後のじんわり光） ── */
+    .afterglow {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 300px; height: 100px;
+      background: radial-gradient(ellipse, rgba(255,220,100,0.25) 0%, transparent 70%);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      opacity: 0;
+      animation: afterglowFade 1.6s ease forwards;
+    }
+    @keyframes afterglowFade {
+      0%   { opacity: 0; }
+      20%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ── ステージが揺れる衝撃 ── */
+    .intro-stage.impact {
+      animation: stageShake 0.35s ease forwards;
+    }
+    @keyframes stageShake {
+      0%  { transform: translate(0,0) rotate(0deg); }
+      15% { transform: translate(-8px, 5px) rotate(-0.8deg); }
+      30% { transform: translate(8px, -5px) rotate(0.8deg); }
+      50% { transform: translate(-5px, 3px) rotate(-0.4deg); }
+      70% { transform: translate(4px, -2px) rotate(0.3deg); }
+      85% { transform: translate(-2px, 1px) rotate(-0.1deg); }
+      100%{ transform: translate(0,0) rotate(0deg); }
+    }
+
+    /* ── グリッチエフェクト ── */
+    .intro-stage.glitch {
+      animation: glitchEffect 0.55s steps(2, end) forwards;
+    }
+    @keyframes glitchEffect {
+      0%  { transform: translate(0,0); filter: none; }
+      10% { transform: translateX(-8px);
+            filter: drop-shadow(8px 0 #ff003c) drop-shadow(-8px 0 #00f7ff); }
+      20% { transform: translateX(8px);
+            filter: drop-shadow(-8px 0 #ff003c) drop-shadow(8px 0 #00f7ff); }
+      30% { transform: translateX(-4px) skewX(-3deg); filter: none;
+            clip-path: inset(15% 0 55% 0); }
+      40% { clip-path: none; transform: translateX(4px);
+            filter: drop-shadow(4px 0 #ffe600) drop-shadow(-4px 0 #ff00ff); }
+      55% { transform: translateX(0); clip-path: inset(55% 0 10% 0); filter: none; }
+      65% { clip-path: none; transform: translateX(-6px);
+            filter: drop-shadow(6px 0 #00f7ff); }
+      80% { transform: translateX(6px) skewX(2deg); filter: none; }
+      90% { transform: translateX(-2px); }
+      100%{ transform: translate(0,0); filter: none; clip-path: none; }
+    }
+
+    /* ── 縦スラッシュライン ── */
+    .slash-line {
+      position: fixed;
+      top: 0; left: 50%;
+      width: 3px; height: 100vh;
+      background: linear-gradient(to bottom,
+        transparent 0%, #fff 15%, #fff 85%, transparent 100%);
+      box-shadow: 0 0 16px #fff, 0 0 40px rgba(255,230,100,0.7);
+      transform: translateX(-50%) scaleY(0);
+      transform-origin: top center;
+      z-index: 9998;
+      animation: slashIn 0.1s ease forwards, slashOut 0.15s ease 0.1s forwards;
+    }
+    @keyframes slashIn  { to { transform: translateX(-50%) scaleY(1); } }
+    @keyframes slashOut { to { opacity: 0; transform: translateX(-50%) scaleY(1); } }
+
+    /* ── カーテン分割 ── */
+    .curtain {
+      position: fixed;
+      left: 0; right: 0;
+      background: #080808;
+      z-index: 9997;
+      pointer-events: none;
+    }
+    #curtain-top    { top: 0;    height: 50%; transform-origin: top; }
+    #curtain-bottom { bottom: 0; height: 50%; transform-origin: bottom; }
+    #curtain-top.split {
+      animation: curtainUp 0.6s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+    }
+    #curtain-bottom.split {
+      animation: curtainDown 0.6s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+    }
+    @keyframes curtainUp   { to { transform: translateY(-100%); } }
+    @keyframes curtainDown { to { transform: translateY(100%); } }
+
+    /* メインコンテンツは最初は隠す */
+    #app-root {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    #app-root.visible { opacity: 1; }
+
+    /* ══════════════════════════════════════
+       モバイル対応（〜640px）
+    ══════════════════════════════════════ */
+    @media (max-width: 640px) {
+
+      /* 横スクロール完全防止 */
+      body { overflow-x: hidden; }
+
+      /* ── ヘッダー ── */
+      .app-header {
+        padding: 0 14px;
+        gap: 8px;
+        height: 48px;
+      }
+      .app-title     { font-size: 0.75rem; letter-spacing: 0.04em; }
+      .tab-btn       { padding: 5px 10px; font-size: 0.72rem; }
+      .preview-badge { display: none; }
+      .header-date   { display: none; }
+
+      /* ── メインエリア ── */
+      .main { padding: 16px 12px 80px; }
+
+      /* ── 今日ヘッダー ── */
+      .today-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 16px;
+      }
+      .today-header h2 { font-size: 1rem; }
+      .today-header p  { font-size: 0.78rem; }
+
+      /* ── セレクターグリッド：3列→1列 ── */
+      .selector-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        perspective: none;
+      }
+      .selector-tile {
+        padding: 16px 16px 14px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .tile-num {
+        font-size: 1.6rem;
+        margin-bottom: 0;
+        flex-shrink: 0;
+        width: 40px;
+      }
+      .tile-badge-row { margin-bottom: 4px; }
+      .tile-preview   { -webkit-line-clamp: 2; margin-bottom: 8px; }
+      .tile-dot       { top: 10px; right: 10px; }
+
+      /* ── 詳細パネル ── */
+      .detail-header { padding: 12px 16px; }
+      .detail-cat    { font-size: 0.88rem; }
+      .detail-body   { padding: 14px 16px; gap: 14px; }
+
+      /* ── 投稿テキストエリア ── */
+      .post-textarea {
+        font-size: 0.92rem;
+        line-height: 1.8;
+        min-height: 120px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 12px;
+      }
+
+      /* ── 文字数カウンター ── */
+      .char-count-row { justify-content: flex-end; gap: 6px; }
+      .char-count-text { font-size: 0.75rem; }
+
+      /* ── AI評価欄 ── */
+      .ai-row {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 12px;
+      }
+      .ai-score-chip { font-size: 0.75rem; }
+      .ai-comment-text {
+        width: 100%;
+        font-size: 0.78rem;
+        line-height: 1.6;
+        padding-top: 4px;
+        border-top: 1px solid rgba(124,58,237,0.2);
+        margin-top: 2px;
+      }
+
+      /* ── アクションボタン ── */
+      .card-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .btn-post {
+        grid-column: 1 / -1;
+        padding: 12px;
+        font-size: 0.88rem;
+        border-radius: 8px;
+      }
+      .btn-preview { padding: 10px; font-size: 0.78rem; }
+      .btn-reserve { padding: 10px; font-size: 0.78rem; }
+      .btn-confirm {
+        grid-column: 1 / -1;
+        padding: 12px;
+        font-size: 0.85rem;
+        border-radius: 8px;
+      }
+
+      /* ── 予約フォーム ── */
+      .reserve-form input[type="datetime-local"] {
+        font-size: 0.88rem;
+        padding: 10px 12px;
+      }
+
+      /* ── ステータス表示 ── */
+      .status-line { font-size: 0.78rem; }
+
+      /* ────────────────────────────────
+         カレンダー：横スクロールを完全排除
+      ──────────────────────────────── */
+      #panel-calendar { overflow: hidden; }
+
+      .cal-nav { gap: 8px; margin-bottom: 12px; }
+      .cal-nav-btn {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        border-radius: 8px;
+      }
+      .cal-year-month { font-size: 0.88rem; }
+      .cal-legend     { gap: 8px; }
+      .cal-legend-item { font-size: 0.65rem; gap: 3px; }
+
+      .cal-weekday-header { gap: 2px; margin-bottom: 2px; }
+      .cal-weekday { font-size: 0.6rem; padding: 3px 0; }
+
+      .cal-month-grid {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 2px;
+      }
+      .cal-cell {
+        min-height: 44px;
+        padding: 4px 3px 3px;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .cal-cell-num {
+        font-size: 0.65rem;
+        font-weight: 700;
+        margin-bottom: 3px;
+        text-align: center;
+      }
+      .cal-today-label { font-size: 0.4rem; letter-spacing: 0.06em; }
+
+      /* 投稿タグ：ラベル非表示・ドットのみ横並び */
+      .cal-post-tags {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 2px;
+        justify-content: center;
+      }
+      .cal-post-tag  { gap: 0; }
+      .cal-tag-label { display: none; }
+      .cal-tag-dot   { width: 6px; height: 6px; }
+
+      /* 祝日名：非表示（セルが小さすぎるため） */
+      .cal-holiday-name { display: none; }
+
+      /* ── モーダル（フルスクリーン気味に） ── */
+      .modal-overlay { padding: 12px; align-items: flex-end; }
+      .modal-box     { border-radius: 16px 16px 12px 12px; width: 100%; max-width: 100%; max-height: 85vh; overflow-y: auto; }
+      .x-card        { padding: 14px 16px; }
+      .x-text        { font-size: 0.9rem; line-height: 1.8; }
+      .x-actions     { gap: 0; }
+      .x-action-btn  { font-size: 0.7rem; padding: 4px 6px; }
+
+      /* ── メモタブ（モバイル） ── */
+      .memo-input-area { gap: 10px; }
+      .memo-textarea   { font-size: 0.92rem; min-height: 90px; }
+      .memo-card       { padding: 12px 14px; }
+      .memo-tag-row    { gap: 6px; flex-wrap: wrap; }
+
+      /* ── イベントタブ（モバイル） ── */
+      .events-month-block { padding: 14px 16px; }
+      .event-item          { padding: 8px 10px; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- イントロアニメーション -->
+<div id="intro">
+  <div class="intro-stage" id="intro-stage">
+    <!-- HOSHINO：上から落ちてくる -->
+    <div class="intro-hoshino" id="intro-hoshino">HOSHINO</div>
+    <!-- 変革人事：1文字ずつ浮かび上がる -->
+    <div class="intro-kanji-row" id="intro-kanji">
+      <span class="kanji-char" data-sx="-80px" data-sy="100px">変</span>
+      <span class="kanji-char" data-sx="-20px" data-sy="120px">革</span>
+      <span class="kanji-char" data-sx="20px"  data-sy="110px">人</span>
+      <span class="kanji-char" data-sx="80px"  data-sy="100px">事</span>
+    </div>
+  </div>
+  <!-- 衝突フラッシュ -->
+  <div class="intro-flash" id="intro-flash"></div>
+</div>
+
+<!-- カーテン分割パネル -->
+<div id="curtain-top"    class="curtain"></div>
+<div id="curtain-bottom" class="curtain"></div>
+
+<div id="app-root">
+
+<!-- ヘッダー -->
+<header class="app-header">
+  <span class="app-title">HOSHINO</span>
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="today">今日の候補</button>
+    <button class="tab-btn" data-tab="calendar">投稿カレンダー</button>
+    <button class="tab-btn" data-tab="memo">メモ</button>
+    <button class="tab-btn" data-tab="events">イベント</button>
+  </nav>
+  <div style="display:flex;align-items:center;gap:10px;margin-left:auto">
+    <span class="preview-badge">PREVIEW</span>
+    <span class="header-date" id="today-label"></span>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ══ 今日タブ ══════════════════════ -->
+  <div class="tab-panel active" id="panel-today">
+    <div class="today-header">
+      <div>
+        <h2>今日の投稿候補</h2>
+        <p id="today-schedule-desc"></p>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label class="hashtag-toggle" title="ハッシュタグを自動付与">
+          <input type="checkbox" id="hashtag-auto" checked>
+          <span class="toggle-track"></span>
+          #ハッシュタグ自動付与
+        </label>
+        <button class="ht-settings-btn" onclick="openHtManager()">⚙ タグ設定</button>
+      </div>
+    </div>
+    <div id="card-container" class="card-list">
+      <div class="loading-state">
+        <span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 投稿カレンダータブ ══════════ -->
+  <div class="tab-panel" id="panel-calendar">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" id="cal-prev">&#8592;</button>
+      <div class="cal-nav-center">
+        <span class="cal-year-month" id="cal-year-month"></span>
+        <div class="cal-legend">
+          <div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--a-type)"></span>A型</div>
+          <div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--b-type)"></span>B型</div>
+          <div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--c-type)"></span>C型</div>
+        </div>
+      </div>
+      <button class="cal-nav-btn" id="cal-next">&#8594;</button>
+    </div>
+    <div class="cal-weekday-header">
+      <div class="cal-weekday">月</div>
+      <div class="cal-weekday">火</div>
+      <div class="cal-weekday">水</div>
+      <div class="cal-weekday">木</div>
+      <div class="cal-weekday">金</div>
+      <div class="cal-weekday sat">土</div>
+      <div class="cal-weekday sun">日</div>
+    </div>
+    <div id="cal-month-grid" class="cal-month-grid"></div>
+  </div>
+
+  <!-- ══ メモタブ ══════════════════════ -->
+  <div class="tab-panel" id="panel-memo">
+    <div class="today-header">
+      <div>
+        <h2>メモ</h2>
+        <p>インスピレーション・気づき・ネタをストック。AIが次回の投稿文に反映します。</p>
+      </div>
+    </div>
+    <div class="memo-input-area">
+      <textarea class="memo-textarea" id="memo-input" placeholder="今日感じたこと、気になったこと、投稿に使いたいネタをメモしておこう…"></textarea>
+      <button class="memo-save-btn" onclick="saveMemo()">メモを保存</button>
+    </div>
+    <div class="memo-section-title">SAVED MEMOS</div>
+    <div class="memo-list" id="memo-list">
+      <div class="memo-empty">まだメモがありません</div>
+    </div>
+  </div>
+
+  <!-- ══ イベントタブ ════════════════════ -->
+  <div class="tab-panel" id="panel-events">
+    <div class="events-tab-header">
+      <div>
+        <h2>ビジネス・季節イベント</h2>
+        <p>毎月のイベントを把握して投稿テーマに活かそう</p>
+      </div>
+      <select class="events-month-select" id="events-month-select" onchange="renderEvents()"></select>
+    </div>
+    <div id="events-container"></div>
+  </div>
+
+</main>
+
+<!-- Xプレビューモーダル -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>Xプレビュー</span>
+      <button class="modal-close" onclick="closePreview()">✕</button>
+    </div>
+    <div class="x-card">
+      <div class="x-user-row">
+        <div class="x-avatar">星</div>
+        <div>
+          <div class="x-name">星野洋一郎</div>
+          <div class="x-handle">@hoshino_jinji</div>
+        </div>
+      </div>
+      <div class="x-text" id="preview-text"></div>
+      <div class="x-meta" id="preview-time"></div>
+      <div class="x-actions">
+        <span class="x-action-btn">💬 返信</span>
+        <span class="x-action-btn">🔁 RT</span>
+        <span class="x-action-btn">❤️ いいね</span>
+        <span class="x-action-btn">🔖 保存</span>
+      </div>
+    </div>
+    <div class="x-char-note">
+      <span style="font-size:0.72rem;color:var(--subtle)">文字数（X上での制限：280）</span>
+      <span class="x-char-pill" id="preview-char"></span>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- 固定ハッシュタグ管理モーダル -->
+<div class="modal-overlay" id="ht-manager-modal">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-header">
+      <span>固定ハッシュタグ設定</span>
+      <button class="modal-close" onclick="closeHtManager()">✕</button>
+    </div>
+    <div style="padding:20px 22px 24px">
+      <p style="font-size:0.8rem;color:var(--subtle);line-height:1.75;margin-bottom:18px">
+        投稿時に自動挿入するハッシュタグを登録できます。<br>
+        1投稿あたり3〜4個を推奨しています。
+      </p>
+      <div class="ht-section-title">登録済みの固定タグ</div>
+      <div class="tag-chips-row" id="fixed-tags-list"></div>
+      <div class="tag-input-row">
+        <input type="text" id="fixed-tag-input" placeholder="#ハッシュタグを入力" maxlength="50"
+               onkeydown="if(event.key==='Enter')addFixedHashtag()">
+        <button onclick="addFixedHashtag()">追加</button>
+      </div>
+      <div class="ht-count-note" id="fixed-tag-count-note"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /#app-root -->
+
+<script>
+// ══════════════════════════════════════════
+// データ定義
+// ══════════════════════════════════════════
+const HASHTAG = '#事業を勝たせる変革人事'; // 後方互換用（旧コードが参照する場合に備えて残す）
+
+// ── 固定ハッシュタグ管理（localStorageで永続化）──
+function _loadFixedHashtags() {
+  try {
+    const s = localStorage.getItem('fixedHashtags');
+    return s ? JSON.parse(s) : [HASHTAG];
+  } catch(e) { return [HASHTAG]; }
+}
+function _saveFixedHashtags(tags) {
+  localStorage.setItem('fixedHashtags', JSON.stringify(tags));
+}
+let _fixedHashtags = _loadFixedHashtags();
+
+// 投稿ごとの自由追加タグ（{ postIndex: ['#tag1', ...] }）
+let _postAdditionalTags = {};
+
+// ══════════════════════════════════════════
+// GAS API 設定（デプロイ後に URL を入力）
+// ══════════════════════════════════════════
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzGgdp_zFIMZVuhdKvy9zvE3GXIrA5Up-J-T6Qxqv-nILIFQIrVxpm7p0HgTermNyPFJA/exec';
+
+async function gasGet(action) {
+  if (!GAS_API_URL || GAS_API_URL.includes('YOUR_GAS')) return null;
+  try {
+    const res  = await fetch(`${GAS_API_URL}?action=${action}`);
+    return await res.json();
+  } catch (e) { console.warn('GAS GET error:', e); return null; }
+}
+
+async function gasPost(action, params) {
+  if (!GAS_API_URL || GAS_API_URL.includes('YOUR_GAS')) return null;
+  try {
+    const res = await fetch(GAS_API_URL, {
+      method:   'POST',
+      redirect: 'follow',
+      body:     JSON.stringify({ action, ...params }),
+    });
+    return await res.json();
+  } catch (e) { console.warn('GAS POST error:', e); return null; }
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  ★ 投稿コンテンツバンク — ここを直接編集してください ★    ║
+// ║  型ごとに1つの投稿を登録しておきます。                   ║
+// ║  当日のWEEKLY_PATTERNに該当する型のみ表示されます。      ║
+// ║  postText : 投稿本文（改行は \n）                        ║
+// ║  aiScore  : AIスコア 0〜100                             ║
+// ║  aiComment: AI評価コメント                               ║
+// ╚══════════════════════════════════════════════════════════╝
+const POST_BANK = {
+
+  // ── A型（成果実証）──────────────────────────────────────
+  A: {
+    category: 'A型：成果実証', typeKey: 'A',
+    postText:
+      "ゼロイチで立ち上げたIS・FS組織、\n最初の6ヶ月で起きたこと。\n\n入社時：商談数ゼロ、プロセス定義なし、採用基準なし。\n\nやったこと：\n① トップの行動を徹底的に言語化し、型に落とした\n② 「なんとなく優秀」の基準を捨て、再現性で採用基準を再定義\n③ 毎週振り返りを実施し、改善サイクルを仕組み化\n\n結果：\n・入社3ヶ月で商談数3倍\n・採用通過率の精度が上がり、90日以内離職率がゼロに\n\n属人化した「うまい人のやり方」は、組織の呪いだ。\n型にすれば、誰でも勝てる。\n\n再現性こそが、事業の武器になる。",
+    aiScore: 79,
+    aiComment: '具体的な数字（3倍・離職率ゼロ）が信頼性を高める。経営者・マネージャー層への引用RTが期待できる。',
+  },
+
+  // ── B型（ナラティブ）────────────────────────────────────
+  B: {
+    category: 'B型：ナラティブ', typeKey: 'B',
+    postText:
+      "高校を卒業して、最初の仕事は保険のセールスだった。\n\nスーツを買う金もなくて、\n父親の古いジャケットを借りて飛び込み営業をした。\n\n「学歴は？」と聞かれると、黙った。\n「大卒じゃないと難しいよ」と言われるのが怖かった。\n\nだから私は、数字だけで話すようにした。\n\n学歴を聞かれる前に、実績を積んだ。\n説明する前に、証明した。\n\n今、採用責任者として候補者と向き合うとき、\n学歴より先に「どう動いてきたか」を見る。\n\nあの頃の自分を、落とさないために。",
+    aiScore: 84,
+    aiComment: '過去投稿「高卒、元保険営業」と同系統で反応が高いテーマ。学歴コンプレックス層への共感が強い。夜21時◎',
+  },
+
+  // ── C型（教育コンテンツ）────────────────────────────────
+  C: {
+    category: 'C型：教育コンテンツ', typeKey: 'C',
+    postText:
+      "採用で「いい人そう」を優先した組織は、必ず後悔する。\n\n「いい人そう」は、感情の話だ。\n「成果を出せるか」は、事実の話だ。\n\nこの2つを混同した瞬間、採用は機能しなくなる。\n\n私が面接で見るのは、たった3点。\n\n① 課題を自分ごとにできるか\n② 不快な問いに正直に答えられるか\n③ 「わかりません」を言えるか\n\n③が一番重要だ。\n知ったかぶりをする人間は、組織の中で嘘をつく。\n等身大で向き合える人間だけが、仕組みの中で伸びる。\n\n採用基準は、事業戦略だ。\n「なんとなく良さそう」で人を選ぶのをやめよ。",
+    aiScore: 91,
+    aiComment: 'リスト形式＋断言構造。過去の同タイプ投稿と比較して保存率が高くなる形式。朝7時投稿が◎',
+  },
+};
+
+// ── 当日スケジュールから投稿候補を生成 ───────────────────────
+const DOW_LABEL = ['日','月','火','水','木','金','土'];
+
+function getTodaysPosts() {
+  const dow      = new Date().getDay();
+  const schedule = WEEKLY_PATTERN[dow] || [];
+  return schedule
+    .filter(s => POST_BANK[s.type])
+    .map((s, i) => ({ ...POST_BANK[s.type], rowIndex: i + 1, id: i + 1 }));
+}
+
+function updateTodayHeader() {
+  const dow      = new Date().getDay();
+  const schedule = WEEKLY_PATTERN[dow] || [];
+  const desc     = document.getElementById('today-schedule-desc');
+  if (!desc) return;
+  if (schedule.length === 0) {
+    desc.textContent = `${DOW_LABEL[dow]}曜日 — 本日は投稿予定なし`;
+    return;
+  }
+  const types = schedule.map(s => s.type + '型').join('・');
+  desc.textContent = `${DOW_LABEL[dow]}曜日 — ${types}（${schedule.length}件）を投稿する日です`;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  ★ 週間投稿スケジュール — ここを編集してパターンを変更 ★  ║
+// ║  曜日番号: 0=日 1=月 2=火 3=水 4=木 5=金 6=土           ║
+// ║  type: 'A'=成果実証  'B'=ナラティブ  'C'=教育コンテンツ  ║
+// ╚══════════════════════════════════════════════════════════╝
+const WEEKLY_PATTERN = {
+  1: [ // 月曜
+    { type: 'A', label: '成果実証' },
+    { type: 'B', label: 'ナラティブ' },
+    { type: 'C', label: '教育コンテンツ' },
+  ],
+  2: [ // 火曜
+    { type: 'C', label: '教育コンテンツ' },
+    { type: 'B', label: 'ナラティブ' },
+  ],
+  3: [ // 水曜
+    { type: 'C', label: '教育コンテンツ' },
+    { type: 'A', label: '成果実証' },
+  ],
+  4: [ // 木曜
+    { type: 'B', label: 'ナラティブ' },
+  ],
+  5: [ // 金曜
+    { type: 'C', label: '教育コンテンツ' },
+    { type: 'A', label: '週次まとめ' },
+  ],
+  6: [], // 土曜（投稿なし）
+  0: [], // 日曜（投稿なし）
+};
+
+// ══════════════════════════════════════════
+// 季節・ビジネスイベントデータ
+// ══════════════════════════════════════════
+const SEASONAL_EVENTS = {
+  1: [
+    { icon: '🎍', title: '新年・年始あいさつ',     desc: '採用方針・今年の抱負など年始の発信に最適',               tag: 'biz'  },
+    { icon: '📊', title: '年度末に向けた採用総括',  desc: '昨年の採用成果を振り返るコンテンツが反応大',            tag: 'biz'  },
+    { icon: '❄️',  title: '冬季インターン終盤',     desc: '冬インターン参加者へのフォロー投稿が効果的',            tag: 'sns'  },
+  ],
+  2: [
+    { icon: '🎓', title: '就活解禁前後（3月解禁に向けた情報発信）', desc: '就活生向けの採用情報・エントリー訴求の準備期間', tag: 'biz' },
+    { icon: '💝', title: 'バレンタイン・2月後半',   desc: '季節感ある職場エピソードがB型投稿に使える',             tag: 'life' },
+    { icon: '📋', title: '来期採用計画の確定',      desc: '採用目標・ポジション公開のアナウンスに最適',            tag: 'biz'  },
+  ],
+  3: [
+    { icon: '🌸', title: '就活解禁（3/1〜）',       desc: '採用ブランディング・エントリー促進の最重要月',          tag: 'biz'  },
+    { icon: '📝', title: '年度末・締め月',           desc: '組織の締め括り＆新年度準備。変化ネタが豊富',            tag: 'biz'  },
+    { icon: '🌸', title: '卒業シーズン',             desc: '感謝・門出・成長ストーリーがB型投稿に刺さる',          tag: 'sns'  },
+    { icon: '🔄', title: '人事異動・組織変更',       desc: '変化の季節。採用・組織づくりの発信が注目される',        tag: 'biz'  },
+  ],
+  4: [
+    { icon: '🆕', title: '新卒入社・迎え入れ',      desc: '新卒育成・オンボーディングの知見投稿が反応大',          tag: 'biz'  },
+    { icon: '📈', title: '新年度スタート',           desc: '目標設定・組織戦略の発信に最適なタイミング',            tag: 'biz'  },
+    { icon: '🌼', title: '春の採用ピーク',           desc: '中途採用も活発になる季節。競合他社との差別化投稿を',    tag: 'biz'  },
+    { icon: '🏖️', title: 'GW前（4月後半）',         desc: 'GW前の駆け込み情報発信。休暇前に認知を高める',          tag: 'sns'  },
+  ],
+  5: [
+    { icon: '🏖️', title: 'GW（5/3〜5/6）',          desc: 'GW明けの採用再開に向けた準備・発信期間',               tag: 'life' },
+    { icon: '🌿', title: '5月病・新人フォロー',      desc: '新卒の離脱防止・メンタルケアの知見がC型投稿に◎',       tag: 'biz'  },
+    { icon: '📣', title: 'インターン告知解禁（夏季）', desc: '夏インターンの告知を早めに打つことで集客UP',           tag: 'biz'  },
+  ],
+  6: [
+    { icon: '☔', title: '梅雨入り',                 desc: '憂鬱を吹き飛ばすポジティブ採用ストーリーが刺さる',      tag: 'life' },
+    { icon: '🎓', title: '夏インターン応募ピーク',   desc: 'インターン参加を後押しするコンテンツに注力',            tag: 'biz'  },
+    { icon: '💼', title: '上半期振り返り',           desc: '半期の採用成果・数字をA型投稿で発信するタイミング',     tag: 'biz'  },
+  ],
+  7: [
+    { icon: '🌞', title: '夏季インターン本番',       desc: 'インターン参加者の体験・採用担当の裏側投稿が人気',      tag: 'biz'  },
+    { icon: '🏆', title: '内定者フォロー期',         desc: '内定承諾後のフォロー施策について発信すると採用層に響く', tag: 'biz' },
+    { icon: '🍺', title: '夏の懇親会シーズン',       desc: '社内カルチャー・チームの雰囲気を発信する絶好機',        tag: 'life' },
+  ],
+  8: [
+    { icon: '🏖️', title: 'お盆・夏休み（8/13〜8/16）', desc: 'SNS閲覧率UP。感情に訴えるB型投稿が効果的',           tag: 'life' },
+    { icon: '📚', title: '秋インターン準備',          desc: '秋冬インターンの告知・PRを開始するタイミング',          tag: 'biz'  },
+    { icon: '🔥', title: '夏の振り返りコンテンツ',   desc: '夏に得た学びや気づきをB型・C型投稿で発信',             tag: 'sns'  },
+  ],
+  9: [
+    { icon: '🍂', title: '秋の採用シーズン',         desc: '中途採用が活発化。秋採用の知見投稿が刺さる時期',        tag: 'biz'  },
+    { icon: '🎋', title: '秋インターン本番',          desc: 'インターン生との交流・育成ストーリーを発信',            tag: 'biz'  },
+    { icon: '📊', title: '下半期スタート',            desc: '下半期の採用目標・戦略変更を発信するタイミング',        tag: 'biz'  },
+  ],
+  10: [
+    { icon: '🎃', title: 'ハロウィン・10月後半',     desc: 'カジュアルな職場エピソードや社内イベント発信に◎',       tag: 'life' },
+    { icon: '✅', title: '内定式（10/1）',            desc: '内定者・新卒育成についての知見投稿が反応大',            tag: 'biz'  },
+    { icon: '📅', title: '来期採用計画の検討期',      desc: '翌年度の採用方針を固める時期。先見性のある発信を',      tag: 'biz'  },
+  ],
+  11: [
+    { icon: '🍁', title: '年末採用ラストスパート',   desc: '年内入社・中途採用の駆け込み時期。訴求力を高める',      tag: 'biz'  },
+    { icon: '📝', title: '来期採用計画の確定',        desc: '翌年度の採用計画が固まり、予算・戦略の発信に適切',      tag: 'biz'  },
+    { icon: '🎖️', title: '表彰・MVP発表シーズン',    desc: '社内表彰やチームの成果発信がA型投稿に活用できる',       tag: 'sns'  },
+  ],
+  12: [
+    { icon: '🎄', title: 'クリスマス・年末',          desc: '1年の感謝・来年への決意。締め括りの発信に最適',         tag: 'life' },
+    { icon: '📊', title: '年間採用総括',               desc: '1年間の採用成果を数字でまとめたA型投稿が刺さる',        tag: 'biz'  },
+    { icon: '🎊', title: '忘年会・締め会シーズン',    desc: 'チームの絆・組織カルチャーを発信するB型投稿に◎',        tag: 'life' },
+  ],
+};
+
+// ══════════════════════════════════════════
+// メモ機能（LocalStorage）
+// ══════════════════════════════════════════
+function _getMemoStorage() {
+  try { return JSON.parse(localStorage.getItem('hoshino_memos') || '[]'); }
+  catch { return []; }
+}
+function _saveMemoStorage(list) {
+  localStorage.setItem('hoshino_memos', JSON.stringify(list));
+}
+
+function saveMemo() {
+  const input = document.getElementById('memo-input');
+  const text  = input.value.trim();
+  if (!text) { showToast('メモを入力してください', 'error'); return; }
+  const list = _getMemoStorage();
+  list.unshift({ id: Date.now(), text, createdAt: new Date().toISOString() });
+  _saveMemoStorage(list);
+  input.value = '';
+  renderMemos();
+  showToast('メモを保存しました', 'ok');
+}
+
+function deleteMemo(id) {
+  const list = _getMemoStorage().filter(m => m.id !== id);
+  _saveMemoStorage(list);
+  renderMemos();
+}
+
+function renderMemos() {
+  const container = document.getElementById('memo-list');
+  if (!container) return;
+  const list = _getMemoStorage();
+  if (list.length === 0) {
+    container.innerHTML = '<div class="memo-empty">まだメモがありません</div>';
+    return;
+  }
+  container.innerHTML = list.map(m => {
+    const d = new Date(m.createdAt);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `
+      <div class="memo-card">
+        <button class="memo-delete-btn" onclick="deleteMemo(${m.id})" title="削除">✕</button>
+        <div class="memo-card-text">${m.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        <div class="memo-tag-row">
+          <span class="memo-date">${dateStr}</span>
+          <span class="memo-ai-badge">AI参照対象</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// イベント表示
+// ══════════════════════════════════════════
+function initEventsMonthSelect() {
+  const sel = document.getElementById('events-month-select');
+  if (!sel) return;
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const current = new Date().getMonth() + 1;
+  months.forEach((label, i) => {
+    const opt = document.createElement('option');
+    opt.value = i + 1;
+    opt.textContent = label;
+    if (i + 1 === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderEvents() {
+  const container = document.getElementById('events-container');
+  if (!container) return;
+  const sel   = document.getElementById('events-month-select');
+  const month = sel ? Number(sel.value) : new Date().getMonth() + 1;
+  const events = SEASONAL_EVENTS[month] || [];
+
+  const tagLabel = { biz: 'ビジネス', sns: 'SNS戦略', life: '季節・生活' };
+  container.innerHTML = `
+    <div class="events-month-block">
+      <div class="events-month-title">${month}月のイベント・注目テーマ</div>
+      <div class="event-list">
+        ${events.map(ev => `
+          <div class="event-item">
+            <div class="event-icon">${ev.icon}</div>
+            <div class="event-content">
+              <div class="event-title">${ev.title}</div>
+              <div class="event-desc">${ev.desc}</div>
+            </div>
+            <span class="event-tag ${ev.tag}">${tagLabel[ev.tag]}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+// イントロアニメーション
+// ══════════════════════════════════════════
+(function () {
+  const intro   = document.getElementById('intro');
+  const stage   = document.getElementById('intro-stage');
+  const hoshino = document.getElementById('intro-hoshino');
+  const flash   = document.getElementById('intro-flash');
+  const appRoot = document.getElementById('app-root');
+  const chars   = document.querySelectorAll('.kanji-char');
+
+  // ── タイムライン ──────────────────────────
+  // 0.2s〜  : 変革人事 1文字ずつ浮上
+  // 1.1s    : HOSHINO 落下開始（0.52s）
+  // 1.65s   : 衝突 → フラッシュ＋火花＋衝撃波
+  // 2.0s    : グリッチ開始（0.55s）
+  // 2.6s    : 縦スラッシュ
+  // 2.7s    : カーテン分割 → メイン画面表示
+  // ──────────────────────────────────────────
+
+  const T_KANJI_START  = 200;
+  const T_KANJI_STEP   = 180;
+  const T_FALL         = 1100;
+  const T_FALL_DUR     = 520;
+  const T_IMPACT       = T_FALL + T_FALL_DUR;   // 1620ms
+  const T_GLITCH       = T_IMPACT + 380;        // 2000ms
+  const T_SLASH        = T_IMPACT + 950;        // 2570ms
+  const T_SPLIT        = T_IMPACT + 1050;       // 2670ms
+  const T_SHOW         = T_SPLIT + 80;          // 2750ms
+  const T_CLEANUP      = T_SPLIT + 700;         // 3370ms
+
+  // Step 1: 変革人事 浮上
+  chars.forEach((char, i) => {
+    setTimeout(() => char.classList.add('rise'), T_KANJI_START + i * T_KANJI_STEP);
+  });
+
+  // Step 2: HOSHINO 落下 ＋ スピードライン生成
+  setTimeout(() => {
+    hoshino.classList.add('fall');
+    // 落下中にスピードラインを数本出す
+    for (let i = 0; i < 8; i++) {
+      const line = document.createElement('div');
+      line.className = 'speed-line';
+      const w = 80 + Math.random() * 180;
+      const top = 30 + Math.random() * 40; // 画面の30〜70%あたり
+      line.style.cssText = `
+        top: ${top}%;
+        margin-left: ${-w/2}px;
+        --w: ${w}px;
+        animation-delay: ${i * 0.04}s;
+        animation-duration: ${0.25 + Math.random() * 0.2}s;
+      `;
+      intro.appendChild(line);
+    }
+  }, T_FALL);
+
+  // Step 3: 衝突フラッシュ＋シェイク＋火花＋衝撃波
+  setTimeout(() => {
+    flash.classList.add('bang');
+    stage.classList.add('impact');
+
+    // 衝撃波リングを2重に出す
+    [
+      { size: '320px', dur: '0.55s', delay: '0s' },
+      { size: '500px', dur: '0.75s', delay: '0.08s' },
+    ].forEach(({ size, dur, delay }) => {
+      const sw = document.createElement('div');
+      sw.className = 'shockwave';
+      sw.style.cssText = `--size:${size}; --dur:${dur}; --delay:${delay};`;
+      intro.appendChild(sw);
+    });
+
+    // 残光グロー
+    const glow = document.createElement('div');
+    glow.className = 'afterglow';
+    intro.appendChild(glow);
+
+    // 火花パーティクルを生成
+    const sparkCount = 36;
+    const colors = ['#ffffff','#ffffff','#ffe680','#ffcc33','#ff9900','#ffffff','#aee0ff'];
+    for (let i = 0; i < sparkCount; i++) {
+      const spark = document.createElement('div');
+      spark.className = 'spark';
+      const angle  = (i / sparkCount) * 360 + (Math.random() - 0.5) * 20;
+      const dist   = 60 + Math.random() * 160;
+      const sx     = Math.cos(angle * Math.PI / 180) * dist;
+      const sy     = Math.sin(angle * Math.PI / 180) * dist;
+      const size   = 2 + Math.random() * 4;
+      const dur    = 0.4 + Math.random() * 0.5;
+      const delay  = Math.random() * 0.1;
+      const color  = colors[Math.floor(Math.random() * colors.length)];
+      // 細長い火花は長方形に
+      const isLong = Math.random() > 0.6;
+      spark.style.cssText = `
+        width: ${isLong ? size * 0.6 : size}px;
+        height: ${isLong ? size * 3 : size}px;
+        background: ${color};
+        box-shadow: 0 0 ${size * 2}px ${color};
+        --sx: ${sx}px; --sy: ${sy}px;
+        --dur: ${dur}s; --delay: ${delay}s;
+        transform-origin: center;
+        rotate: ${angle}deg;
+      `;
+      intro.appendChild(spark);
+    }
+  }, T_IMPACT);
+
+  // Step 4: グリッチ
+  setTimeout(() => {
+    stage.classList.add('glitch');
+  }, T_GLITCH);
+
+  // Step 5: 縦スラッシュ
+  setTimeout(() => {
+    const slash = document.createElement('div');
+    slash.className = 'slash-line';
+    document.body.appendChild(slash);
+  }, T_SLASH);
+
+  // Step 6: カーテン分割 → メイン表示
+  setTimeout(() => {
+    document.getElementById('curtain-top').classList.add('split');
+    document.getElementById('curtain-bottom').classList.add('split');
+  }, T_SPLIT);
+
+  setTimeout(() => {
+    appRoot.classList.add('visible');
+  }, T_SHOW);
+
+  // Step 7: イントロ・カーテンを片付け
+  setTimeout(() => {
+    intro.remove();
+    document.getElementById('curtain-top')?.remove();
+    document.getElementById('curtain-bottom')?.remove();
+    document.querySelectorAll('.slash-line').forEach(el => el.remove());
+  }, T_CLEANUP);
+})();
+
+// ══════════════════════════════════════════
+// 初期化
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  document.getElementById('today-label').textContent =
+    today.toLocaleDateString('ja-JP', {month:'2-digit', day:'2-digit'}).replace('/','.') +
+    ' ' + ['日','月','火','水','木','金','土'][today.getDay()];
+
+  updateTodayHeader();
+  renderMemos();
+  initEventsMonthSelect();
+  renderEvents();
+
+  // GAS から今日の投稿候補を取得（未設定の場合はローカルデータを使用）
+  setTimeout(async () => {
+    let todaysPosts = null;
+
+    const gasData = await gasGet('getTodaysPosts');
+    if (gasData && gasData.success && gasData.posts && gasData.posts.length > 0) {
+      todaysPosts = gasData.posts;
+    } else {
+      todaysPosts = getTodaysPosts(); // ローカルモックにフォールバック
+    }
+
+    if (todaysPosts.length > 0) {
+      renderCards(todaysPosts);
+    } else {
+      const container = document.getElementById('card-container');
+      container.innerHTML = '';
+      container.className = '';
+      const dow = new Date().getDay();
+      const isWeekend = dow === 0 || dow === 6;
+      container.innerHTML = `
+        <div class="no-post-today">
+          <div class="no-post-icon">${isWeekend ? '🌙' : '📅'}</div>
+          <div class="no-post-title">${isWeekend ? '今日はお休み' : '本日は投稿予定なし'}</div>
+          <div class="no-post-sub">本日分はまだ生成されていません</div>
+        </div>`;
+    }
+    renderCalendar();
+  }, 400);
+
+  // タブ切り替え
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+});
+
+// ══════════════════════════════════════════
+// 今日タブ：セレクター描画
+// ══════════════════════════════════════════
+let _posts = [];
+let _selectedIndex = -1;
+
+function renderCards(posts) {
+  _posts = posts;
+  const container = document.getElementById('card-container');
+  container.innerHTML = '';
+  container.className = 'selector-wrap';
+
+  // セレクターグリッド
+  const grid = document.createElement('div');
+  grid.className = 'selector-grid';
+  posts.forEach((post, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'selector-tile';
+    tile.dataset.type = post.typeKey;
+    tile.dataset.index = i;
+    const preview = escapeHtml(
+      post.postText.split('\n').filter(l => l.trim()).slice(0, 3).join(' ').slice(0, 72)
+    );
+    tile.innerHTML = `
+      <div class="tile-dot"></div>
+      <div class="tile-num">${String(i + 1).padStart(2, '0')}</div>
+      <div class="tile-badge-row">
+        <span class="type-badge ${post.typeKey}">${post.category}</span>
+      </div>
+      <div class="tile-preview">${preview}…</div>
+      <div class="tile-score">
+        AI ${post.aiScore}
+        <div class="tile-score-bar"><div class="tile-score-fill" style="width:${post.aiScore}%"></div></div>
+      </div>`;
+    tile.style.opacity = '0';
+    tile.style.transform = 'translateY(8px)';
+    grid.appendChild(tile);
+    setTimeout(() => {
+      tile.style.transition = 'border-color 0.22s, box-shadow 0.22s, opacity 0.28s ease, filter 0.22s, transform 0.28s ease';
+      tile.style.opacity = '';
+      tile.style.transform = '';
+    }, 60 * i);
+    // 3D チルト + マウス追従シャイン
+    tile.addEventListener('mousemove', (e) => {
+      if (tile.classList.contains('inactive')) return;
+      const r = tile.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width;   // 0〜1
+      const ny = (e.clientY - r.top)  / r.height;  // 0〜1
+      const rx = (ny - 0.5) * -14;  // rotateX
+      const ry = (nx - 0.5) *  14;  // rotateY
+      tile.style.setProperty('--mx', `${nx * 100}%`);
+      tile.style.setProperty('--my', `${ny * 100}%`);
+      const lift = tile.classList.contains('selected') ? 0 : -8;
+      const sc   = tile.classList.contains('selected') ? 1.0 : 1.015;
+      tile.style.transform = `perspective(900px) translateY(${lift}px) scale(${sc}) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    });
+    tile.addEventListener('mouseleave', () => {
+      tile.style.removeProperty('--mx');
+      tile.style.removeProperty('--my');
+      tile.style.transform = tile.classList.contains('selected') ? '' :
+        tile.classList.contains('inactive') ? 'scale(0.97)' : '';
+      tile.style.transition = 'transform 0.45s cubic-bezier(0.16,1,0.3,1), border-color 0.3s, box-shadow 0.3s, opacity 0.3s, filter 0.3s';
+      setTimeout(() => { tile.style.transition = ''; }, 460);
+    });
+
+    tile.addEventListener('click', () => selectPost(i));
+  });
+  container.appendChild(grid);
+
+  // 詳細パネル
+  const detail = document.createElement('div');
+  detail.className = 'detail-panel';
+  detail.id = 'detail-panel';
+  container.appendChild(detail);
+
+  // 最初の1件を自動選択
+  setTimeout(() => selectPost(0), 200);
+}
+
+function selectPost(index) {
+  _selectedIndex = index;
+  const post = _posts[index];
+
+  // タイル状態更新 + 3Dリセット + フラッシュ
+  document.querySelectorAll('.selector-tile').forEach((tile, i) => {
+    tile.classList.remove('selected', 'inactive', 'flash-select');
+    tile.style.transform = '';
+    if (i === index) {
+      tile.classList.add('selected');
+      // X青フラッシュ → タイプカラーグローへ
+      void tile.offsetWidth; // reflow
+      tile.classList.add('flash-select');
+      setTimeout(() => tile.classList.remove('flash-select'), 540);
+    } else {
+      tile.classList.add('inactive');
+    }
+  });
+
+  // 詳細パネル再構築
+  const detail = document.getElementById('detail-panel');
+  detail.className = 'detail-panel';
+  detail.dataset.type = post.typeKey;
+  detail.innerHTML = `
+    <div class="detail-header">
+      <div>
+        <div class="detail-mission">MISSION ${String(index + 1).padStart(2, '0')}</div>
+        <div class="detail-cat">${post.category}</div>
+      </div>
+    </div>
+    <div class="detail-body">
+      <textarea class="post-textarea" rows="7">${post.postText}</textarea>
+      <div class="char-count-row">
+        <div class="char-bar-track"><div class="char-bar-fill" style="width:0%"></div></div>
+        <span class="char-count-text">0 / 280</span>
+      </div>
+      <div class="ai-row">
+        <span class="ai-score-chip">AI ${post.aiScore}</span>
+        <div class="ai-bar-track"><div class="ai-bar-fill" style="width:${post.aiScore}%"></div></div>
+        <span class="ai-comment-text">${post.aiComment}</span>
+      </div>
+      <div class="free-tags-section">
+        <div class="free-tags-header">
+          <span class="ht-section-title">このポストに追加するタグ</span>
+          <span class="ht-count-note" id="post-tag-count"></span>
+        </div>
+        <div class="tag-chips-row" id="free-tags-list"></div>
+        <div class="tag-input-row" style="margin-top:8px">
+          <input type="text" id="free-tag-input" placeholder="#タグを追加（省略可）" maxlength="50"
+                 onkeydown="if(event.key==='Enter')addFreeHashtag()">
+          <button onclick="addFreeHashtag()">追加</button>
+        </div>
+      </div>
+      <div class="status-line"></div>
+      <div class="card-actions">
+        <button class="btn-preview" onclick="openPreview(this)">プレビュー</button>
+        <button class="btn-post"    onclick="handlePost(this)">投稿する</button>
+        <button class="btn-reserve" onclick="showReserve(this)">予約</button>
+      </div>
+      <div class="reserve-form">
+        <label>予約日時</label>
+        <input type="datetime-local">
+        <div class="reserve-form-btns">
+          <button class="btn-confirm" onclick="handleReserve(this)">予約を確定</button>
+          <button class="btn-ghost"   onclick="hideReserve(this)">キャンセル</button>
+        </div>
+      </div>
+    </div>`;
+
+  // 文字数カウンター
+  const ta   = detail.querySelector('.post-textarea');
+  const fill = detail.querySelector('.char-bar-fill');
+  const txt  = detail.querySelector('.char-count-text');
+  const updateCount = () => {
+    const full = getFullText(ta);
+    const len = full.length;
+    fill.style.width = Math.min(len / 280 * 100, 100) + '%';
+    fill.style.background = len > 280 ? '#c0392b' : len > 240 ? '#c07800' : 'var(--c-type)';
+    txt.textContent = len + ' / 280';
+    txt.className = 'char-count-text' + (len > 280 ? ' over' : len > 240 ? ' warn' : '');
+  };
+  ta.addEventListener('input', updateCount);
+  document.getElementById('hashtag-auto')?.addEventListener('change', updateCount);
+  renderFreeTagsBadges();
+  updateCount();
+
+  // 予約デフォルト日時
+  const dtInput = detail.querySelector('input[type="datetime-local"]');
+  const dt = new Date(Date.now() + 3600000);
+  dtInput.value = new Date(dt - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+  // アニメーションで表示
+  requestAnimationFrame(() => requestAnimationFrame(() => detail.classList.add('visible')));
+}
+
+// ハッシュタグトグルで詳細パネルを更新
+document.addEventListener('change', e => {
+  if (e.target.id === 'hashtag-auto') {
+    const ta = document.querySelector('#detail-panel .post-textarea');
+    if (ta) ta.dispatchEvent(new Event('input'));
+  }
+});
+
+// ── 投稿する ────────────────────────────
+async function handlePost(btn) {
+  const detail = document.getElementById('detail-panel');
+  const ta     = detail.querySelector('.post-textarea');
+  const len    = getFullText(ta).length;
+  if (len > 280) { showToast('280文字を超えています', 'error'); return; }
+  if (!confirm(`投稿しますか？\n\n「${ta.value.slice(0, 40)}…」`)) return;
+  btn.textContent = '送信中…'; btn.disabled = true;
+
+  const post   = _posts[_selectedIndex];
+  const result = await gasPost('postNow', { rowIndex: post.rowIndex, postText: getFullText(ta) });
+
+  if (result && !result.success) {
+    showToast('X API未設定: ' + (result.message || ''), 'error');
+    btn.textContent = '投稿する'; btn.disabled = false;
+    return;
+  }
+  setDone(detail, 'posted', '— 投稿完了');
+  const tile = document.querySelectorAll('.selector-tile')[_selectedIndex];
+  if (tile) { tile.classList.remove('selected'); tile.style.opacity = '0.25'; }
+  showToast('投稿しました', 'ok');
+}
+
+// ── 予約 ────────────────────────────────
+function showReserve(btn) {
+  const detail = document.getElementById('detail-panel');
+  detail.querySelector('.card-actions').style.display = 'none';
+  detail.querySelector('.reserve-form').classList.add('visible');
+}
+function hideReserve(btn) {
+  const detail = document.getElementById('detail-panel');
+  detail.querySelector('.reserve-form').classList.remove('visible');
+  detail.querySelector('.card-actions').style.display = 'flex';
+}
+async function handleReserve(btn) {
+  const detail = document.getElementById('detail-panel');
+  const val    = detail.querySelector('input[type="datetime-local"]').value;
+  if (!val) { showToast('日時を選択してください', 'error'); return; }
+  const label = new Date(val).toLocaleString('ja-JP', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  if (!confirm(`${label} に予約しますか？`)) return;
+  btn.textContent = '…'; btn.disabled = true;
+
+  const post = _posts[_selectedIndex];
+  await gasPost('setReservation', { rowIndex: post.rowIndex, reserveTime: val });
+
+  setDone(detail, 'reserved', `— ${label} 予約済み`);
+  showToast(`${label} に予約しました`, 'ok');
+}
+
+function setDone(panel, type, label) {
+  panel.querySelector('.reserve-form').classList.remove('visible');
+  panel.querySelector('.card-actions').style.display = 'none';
+  const sl = panel.querySelector('.status-line');
+  sl.textContent = label; sl.className = `status-line ${type}`;
+  setTimeout(() => panel.classList.add('done'), 500);
+}
+
+// ── プレビュー ───────────────────────────
+function openPreview(btn) {
+  const detail = document.getElementById('detail-panel');
+  const ta     = detail.querySelector('.post-textarea');
+  const full   = getFullText(ta);
+  const len  = full.length;
+
+  // ハッシュタグを青く
+  const rendered = full.replace(/(#[\w\u3000-\u9fff]+)/g, '<span class="x-hashtag">$1</span>');
+  document.getElementById('preview-text').innerHTML = rendered;
+
+  const now = new Date();
+  document.getElementById('preview-time').textContent =
+    now.toLocaleString('ja-JP',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  const pill = document.getElementById('preview-char');
+  pill.textContent = len + ' / 280';
+  pill.className = 'x-char-pill' + (len > 280 ? ' over' : len > 240 ? ' warn' : '');
+
+  document.getElementById('preview-modal').classList.add('open');
+}
+function closePreview() {
+  document.getElementById('preview-modal').classList.remove('open');
+}
+document.getElementById('preview-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closePreview();
+});
+
+function getFullText(ta) {
+  const auto = document.getElementById('hashtag-auto')?.checked;
+  if (!auto) return ta.value;
+  const base = ta.value;
+  const fixedTags = _fixedHashtags.filter(t => !base.includes(t));
+  const freeTags  = (_postAdditionalTags[_selectedIndex] || []).filter(t => !base.includes(t));
+  const allTags   = [...fixedTags, ...freeTags];
+  return allTags.length > 0 ? base + '\n\n' + allTags.join(' ') : base;
+}
+
+// ── 固定ハッシュタグ管理モーダル ──────────
+function openHtManager() {
+  renderFixedTagsList();
+  updateFixedTagCountNote();
+  document.getElementById('ht-manager-modal').classList.add('open');
+}
+function closeHtManager() {
+  document.getElementById('ht-manager-modal').classList.remove('open');
+  document.getElementById('fixed-tag-input').value = '';
+}
+document.getElementById('ht-manager-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeHtManager();
+});
+
+function renderFixedTagsList() {
+  const container = document.getElementById('fixed-tags-list');
+  if (!container) return;
+  if (_fixedHashtags.length === 0) {
+    container.innerHTML = '<span style="font-size:0.75rem;color:var(--subtle)">固定タグが設定されていません</span>';
+    return;
+  }
+  container.innerHTML = _fixedHashtags.map((tag, i) => `
+    <span class="tag-chip">${tag}
+      <button class="chip-del" onclick="removeFixedHashtag(${i})" title="削除">✕</button>
+    </span>
+  `).join('');
+}
+
+function addFixedHashtag() {
+  const input = document.getElementById('fixed-tag-input');
+  let tag = input.value.trim();
+  if (!tag) { showToast('タグを入力してください', 'error'); return; }
+  if (!tag.startsWith('#')) tag = '#' + tag;
+  if (_fixedHashtags.includes(tag)) { showToast('すでに登録されているタグです', 'error'); return; }
+  if (_fixedHashtags.length >= 4) { showToast('固定タグは最大4個まで設定できます', 'error'); return; }
+  _fixedHashtags.push(tag);
+  _saveFixedHashtags(_fixedHashtags);
+  input.value = '';
+  renderFixedTagsList();
+  updateFixedTagCountNote();
+  const ta = document.querySelector('#detail-panel .post-textarea');
+  if (ta) ta.dispatchEvent(new Event('input'));
+}
+
+function removeFixedHashtag(index) {
+  _fixedHashtags.splice(index, 1);
+  _saveFixedHashtags(_fixedHashtags);
+  renderFixedTagsList();
+  updateFixedTagCountNote();
+  const ta = document.querySelector('#detail-panel .post-textarea');
+  if (ta) ta.dispatchEvent(new Event('input'));
+}
+
+function updateFixedTagCountNote() {
+  const note = document.getElementById('fixed-tag-count-note');
+  if (!note) return;
+  const count = _fixedHashtags.length;
+  if (count >= 4) {
+    note.textContent = `固定タグ：${count}個（上限に達しています）`;
+    note.className = 'ht-count-note warn';
+  } else if (count >= 3) {
+    note.textContent = `固定タグ：${count}個（推奨範囲内です）`;
+    note.className = 'ht-count-note ok';
+  } else {
+    note.textContent = `固定タグ：${count}個 ／ 1投稿あたり3〜4個を推奨しています`;
+    note.className = 'ht-count-note';
+  }
+}
+
+// ── 投稿ごとの自由追加タグ ──────────────
+function renderFreeTagsBadges() {
+  const container = document.getElementById('free-tags-list');
+  if (!container) return;
+  const tags = _postAdditionalTags[_selectedIndex] || [];
+  container.innerHTML = tags.length === 0
+    ? '<span style="font-size:0.72rem;color:var(--subtle)">追加タグはありません</span>'
+    : tags.map((tag, i) => `
+        <span class="tag-chip">${tag}
+          <button class="chip-del" onclick="removeFreeHashtag(${i})" title="削除">✕</button>
+        </span>`).join('');
+  updatePostTagCount();
+}
+
+function addFreeHashtag() {
+  const input = document.getElementById('free-tag-input');
+  let tag = input.value.trim();
+  if (!tag) { showToast('タグを入力してください', 'error'); return; }
+  if (!tag.startsWith('#')) tag = '#' + tag;
+  const existing = [..._fixedHashtags, ...(_postAdditionalTags[_selectedIndex] || [])];
+  if (existing.includes(tag)) { showToast('すでに追加されているタグです', 'error'); return; }
+  if (existing.length >= 4) { showToast('1投稿あたり4個以内を推奨しています', 'error'); return; }
+  if (!_postAdditionalTags[_selectedIndex]) _postAdditionalTags[_selectedIndex] = [];
+  _postAdditionalTags[_selectedIndex].push(tag);
+  input.value = '';
+  renderFreeTagsBadges();
+  const ta = document.querySelector('#detail-panel .post-textarea');
+  if (ta) ta.dispatchEvent(new Event('input'));
+}
+
+function removeFreeHashtag(index) {
+  if (!_postAdditionalTags[_selectedIndex]) return;
+  _postAdditionalTags[_selectedIndex].splice(index, 1);
+  renderFreeTagsBadges();
+  const ta = document.querySelector('#detail-panel .post-textarea');
+  if (ta) ta.dispatchEvent(new Event('input'));
+}
+
+function updatePostTagCount() {
+  const note = document.getElementById('post-tag-count');
+  if (!note) return;
+  const freeCount = (_postAdditionalTags[_selectedIndex] || []).length;
+  const total = _fixedHashtags.length + freeCount;
+  note.textContent = `合計 ${total} / 推奨 3〜4個`;
+  note.className = 'ht-count-note' + (total >= 3 && total <= 4 ? ' ok' : total > 4 ? ' warn' : '');
+}
+
+// ══════════════════════════════════════════
+// 日本祝日計算
+// ══════════════════════════════════════════
+const _holidayCache = {};
+
+function getJapaneseHolidays(year) {
+  const map = new Map(); // 'YYYY-MM-DD' → 祝日名
+
+  const add = (m, d, name) =>
+    map.set(`${year}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`, name);
+
+  // 第N曜日を計算（month:1-12, n:1-5, weekday:0=日..6=土）
+  const nthWeekday = (month, n, weekday) => {
+    const first = new Date(year, month - 1, 1).getDay();
+    let offset = weekday - first;
+    if (offset < 0) offset += 7;
+    return 1 + offset + (n - 1) * 7;
+  };
+
+  // ── 固定祝日 ──
+  add(1,  1,  '元日');
+  add(2,  11, '建国記念の日');
+  add(2,  23, '天皇誕生日');
+  add(4,  29, '昭和の日');
+  add(5,  3,  '憲法記念日');
+  add(5,  4,  'みどりの日');
+  add(5,  5,  'こどもの日');
+  add(8,  11, '山の日');
+  add(11, 3,  '文化の日');
+  add(11, 23, '勤労感謝の日');
+
+  // ── ハッピーマンデー ──
+  add(1,  nthWeekday(1, 2, 1),  '成人の日');
+  add(7,  nthWeekday(7, 3, 1),  '海の日');
+  add(9,  nthWeekday(9, 3, 1),  '敬老の日');
+  add(10, nthWeekday(10, 2, 1), 'スポーツの日');
+
+  // ── 春分・秋分（年ごとの実測値） ──
+  const shunbun = {2024:20,2025:20,2026:20,2027:21,2028:20,2029:20,2030:20};
+  const shubun  = {2024:22,2025:23,2026:23,2027:23,2028:22,2029:23,2030:23};
+  if (shunbun[year]) add(3, shunbun[year], '春分の日');
+  if (shubun[year])  add(9, shubun[year],  '秋分の日');
+
+  // ── 振替休日（祝日が日曜 → 翌月曜） ──
+  const origKeys = [...map.keys()];
+  origKeys.forEach(key => {
+    const d = new Date(key);
+    if (d.getDay() === 0) {
+      const next = new Date(d);
+      next.setDate(next.getDate() + 1);
+      const nk = next.toISOString().slice(0, 10);
+      if (!map.has(nk)) map.set(nk, '振替休日');
+    }
+  });
+
+  // ── 国民の休日（祝日と祝日に挟まれた平日） ──
+  const daysInYear = new Date(year, 11, 31).getDate() === 31 ? 365 : 366;
+  for (let di = 2; di <= 364; di++) {
+    const cur  = new Date(year, 0, di);
+    const prev = new Date(year, 0, di - 1);
+    const next = new Date(year, 0, di + 1);
+    const curKey  = cur.toISOString().slice(0,10);
+    const prevKey = prev.toISOString().slice(0,10);
+    const nextKey = next.toISOString().slice(0,10);
+    if (!map.has(curKey) && map.has(prevKey) && map.has(nextKey) && cur.getDay() !== 0) {
+      map.set(curKey, '国民の休日');
+    }
+  }
+
+  return map;
+}
+
+function getHolidays(year) {
+  if (!_holidayCache[year]) _holidayCache[year] = getJapaneseHolidays(year);
+  return _holidayCache[year];
+}
+
+// ══════════════════════════════════════════
+// 月間カレンダー描画（永続スケジュール）
+// ══════════════════════════════════════════
+const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+
+function renderCalendar() {
+  const today    = new Date();
+  const holidays = getHolidays(calYear);
+  document.getElementById('cal-year-month').textContent = `${calYear}年 ${MONTH_NAMES[calMonth]}`;
+
+  const grid = document.getElementById('cal-month-grid');
+  grid.innerHTML = '';
+
+  const firstDay    = new Date(calYear, calMonth, 1);
+  const lastDay     = new Date(calYear, calMonth + 1, 0);
+  const startOffset = (firstDay.getDay() + 6) % 7; // 月曜始まり
+
+  // 先頭の空セル
+  for (let i = 0; i < startOffset; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-cell empty';
+    grid.appendChild(el);
+  }
+
+  // 日付セル
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const date       = new Date(calYear, calMonth, d);
+    const dow        = date.getDay();
+    const dateKey    = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday    = today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === d;
+    const isWeekend  = dow === 0 || dow === 6;
+    const holidayName = holidays.get(dateKey) || null;
+    const posts      = holidayName ? [] : (WEEKLY_PATTERN[dow] || []); // 祝日は投稿なし
+
+    const cell = document.createElement('div');
+    cell.className = [
+      'cal-cell',
+      isToday     ? 'today'   : '',
+      holidayName ? 'holiday' : '',
+      isWeekend   ? 'weekend' : '',
+    ].filter(Boolean).join(' ');
+
+    const todayLabel = isToday ? `<span class="cal-today-label">TODAY</span>` : '';
+    const holLabel   = holidayName ? `<div class="cal-holiday-name">${holidayName}</div>` : '';
+
+    cell.innerHTML = `
+      ${todayLabel}
+      <div class="cal-cell-num">${d}</div>
+      ${holLabel}
+      <div class="cal-post-tags">
+        ${posts.map(p => `
+          <div class="cal-post-tag">
+            <span class="cal-tag-dot ${p.type}"></span>
+            <span class="cal-tag-label">${p.label}</span>
+          </div>`).join('')}
+      </div>`;
+    grid.appendChild(cell);
+  }
+
+  // 末尾の空セル
+  const total = startOffset + lastDay.getDate();
+  const rem   = total % 7;
+  if (rem !== 0) {
+    for (let i = 0; i < 7 - rem; i++) {
+      const el = document.createElement('div');
+      el.className = 'cal-cell empty';
+      grid.appendChild(el);
+    }
+  }
+}
+
+document.getElementById('cal-prev').addEventListener('click', () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+document.getElementById('cal-next').addEventListener('click', () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
+
+// ══════════════════════════════════════════
+// ユーティリティ
+// ══════════════════════════════════════════
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `show ${type}`;
+  setTimeout(() => { t.className = ''; }, 2800);
+}
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
